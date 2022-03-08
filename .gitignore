@@ -1,0 +1,5 @@
+# Project exclude paths
+/techtalk-data-pipeline-snowpark-common/target/
+/techtalk-data-pipeline-snowpark-pipeline1/target/
+.idea
+**/logs

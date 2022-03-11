@@ -3,24 +3,24 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>techtalk-data-pipeline-snowpark</artifactId>
+        <artifactId>tt-dps</artifactId>
         <groupId>com.griddynamics</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>techtalk-data-pipeline-snowpark-pipeline1</artifactId>
+    <artifactId>tt-dps-insert</artifactId>
 
     <properties>
         <maven.compiler.source>13</maven.compiler.source>
         <maven.compiler.target>13</maven.compiler.target>
-        <main.class>com.griddynamics.pipeline1.Main</main.class>
+        <main.class>com.griddynamics.crud.Main</main.class>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.griddynamics</groupId>
-            <artifactId>techtalk-data-pipeline-snowpark-common</artifactId>
+            <artifactId>tt-dps-common</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

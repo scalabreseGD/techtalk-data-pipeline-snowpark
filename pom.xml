@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.griddynamics</groupId>
-    <artifactId>techtalk-data-pipeline-snowpark</artifactId>
+    <artifactId>tt-dps</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>techtalk-data-pipeline-snowpark-common</module>
-        <module>techtalk-data-pipeline-snowpark-pipeline1</module>
+        <module>tt-dps-common</module>
+        <module>tt-dps-insert</module>
     </modules>
 
     <properties>

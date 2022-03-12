@@ -1,5 +1,6 @@
 package com.griddynamics.crud
 
+import com.griddynamics.common.SnowflakeWriter.JoinCriteria
 import com.griddynamics.common.{SnowflakeWriter, sessionManager}
 import com.snowflake.snowpark.functions._
 import com.snowflake.snowpark.{DataFrame, SaveMode, Session}
@@ -15,7 +16,7 @@ object SampleCrud {
       sizeInSquareMeters: Double
   )
 
-  def generateEmployeeDataFrame(session: Session, numRecord: Int): DataFrame = {
+  def generateIndustryDataFrame(session: Session, numRecord: Int): DataFrame = {
     val random = new Random()
     val industries = for {
       _ <- 0 to numRecord
@@ -26,13 +27,16 @@ object SampleCrud {
         .setScale(2, RoundingMode.CEILING)
         .toDouble
     )
-    session.createDataFrame(industries)
+//    val viewName = "temp_industry_code_" + System.currentTimeMillis()
+    session
+      .createDataFrame(industries)
+      .cacheResult()
   }
 
   def insertSampleIndustryCode(numRecord: Int): Unit = {
 
     SnowflakeWriter.writeBronzeLayer(
-      session => generateEmployeeDataFrame(session, numRecord),
+      session => generateIndustryDataFrame(session, numRecord),
       SaveMode.Overwrite,
       "INDUSTRY_CODE"
     )
@@ -59,15 +63,22 @@ object SampleCrud {
   }
 
   def performMerge(): Unit = {
-    val sourceDf = generateEmployeeDataFrame(sessionManager.get, 1000)
-    val firstTwoLectersDistrictCode = substring(col("districtCode"), lit(0), lit(2))
+    val sourceDf = generateIndustryDataFrame(sessionManager.get, 1000)
+    val firstTwoLectersDistrictCode: JoinCriteria = (source, destination) => {
+      substring(source("districtCode"), lit(0), lit(2))
+        .equal_to(substring(destination("districtCode"), lit(0), lit(2)))
+    }
+
     SnowflakeWriter.merge(
       "INDUSTRY_CODE",
       sourceDf,
-      firstTwoLectersDistrictCode === firstTwoLectersDistrictCode,
-      notMatchedOperation = merge => merge.insert(
-        sourceDf.schema.fields.map(field => (field.name, sourceDf(field.name))).toMap
-      )
+      firstTwoLectersDistrictCode,
+      notMatchedOperation = merge =>
+        merge.insert(
+          sourceDf.schema.fields
+            .map(field => (field.name, sourceDf(field.name)))
+            .toMap
+        )
     )
   }
 }

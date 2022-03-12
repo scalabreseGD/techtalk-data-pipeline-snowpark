@@ -1,7 +1,16 @@
 package com.griddynamics.common
 
 import com.snowflake.snowpark.functions.{col, lit}
-import com.snowflake.snowpark.{Column, DataFrame, MatchedClauseBuilder, MergeBuilder, NotMatchedClauseBuilder, SaveMode, Session, Updatable}
+import com.snowflake.snowpark.{
+  Column,
+  DataFrame,
+  MatchedClauseBuilder,
+  MergeBuilder,
+  NotMatchedClauseBuilder,
+  SaveMode,
+  Session,
+  Updatable
+}
 
 import java.util.UUID
 
@@ -9,6 +18,9 @@ object SnowflakeWriter {
 
   type DataFrameGenFromSession = Session => DataFrame
   type DataFrameTransformer = DataFrame => DataFrame
+  trait JoinCriteria extends Function2[DataFrame, DataFrame, Column] {
+    def apply(source: DataFrame, target: DataFrame): Column
+  }
 
   private def generateDfFromTableName(
       tableName: String
@@ -73,15 +85,14 @@ object SnowflakeWriter {
   def merge(
       tableName: String,
       sourceDataFrame: DataFrame,
-      joinCriteria: Column,
+      joinCriteria: JoinCriteria,
       whenMatchedExtraCondition: Column = lit(true),
       matchedOperation: MatchedClauseBuilder => MergeBuilder = null,
       whenNotMatchedExtraCondition: Column = lit(true),
       notMatchedOperation: NotMatchedClauseBuilder => MergeBuilder = null
   )(implicit sessionManager: SessionManager): Unit = {
-    val mergeBuilder: MergeBuilder =
-      generateDfFromTableName(tableName)(sessionManager.get)
-        .merge(sourceDataFrame, joinCriteria)
+    val target = generateDfFromTableName(tableName)(sessionManager.get)
+    val mergeBuilder: MergeBuilder = target.merge(sourceDataFrame, joinCriteria(sourceDataFrame, target))
 
     Option(matchedOperation)
       .map(_.apply(mergeBuilder.whenMatched(whenMatchedExtraCondition)))

@@ -24,4 +24,7 @@ trait BaseServlet extends ScalatraServlet with JacksonJsonSupport {
   before() {
     contentType = formats("json")
   }
+
+
+
 }

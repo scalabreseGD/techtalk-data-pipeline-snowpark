@@ -1,9 +1,15 @@
-snowflake-url: "https://inspire.east-us-2.azure.snowflakecomputing.com:443"
-snowflake-user: "RA_OBJOWNR_DEV"
-snowflake-password: "=5*7wVnf)z#$c(G8"
-snowflake-warehouse: "RA_UA_WH"
-snowflake-db: 'RDS_DEV'
-snowflake-schema: "BWW"
+#snowflake-url: "https://inspire.east-us-2.azure.snowflakecomputing.com:443"
+snowflake-url: "https://LL76183.east-us-2.azure.snowflakecomputing.com:443"
+#snowflake-user: "RA_OBJOWNR_DEV"
+snowflake-user: "demo"
+#snowflake-password: "=5*7wVnf)z#$c(G8"
+snowflake-password: "Simon123!"
+#snowflake-warehouse: "RA_UA_WH"
+snowflake-warehouse: "COMPUTE_WH"
+#snowflake-db: 'RDS_DEV'
+snowflake-db: 'DEMO'
+#snowflake-schema: "BWW"
+snowflake-schema: "TT_DPS"
 
 pipeline:
   tables:

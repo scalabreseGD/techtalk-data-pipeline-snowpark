@@ -12,6 +12,7 @@
         <module>tt-dps-common</module>
         <module>tt-dps-simple-crud</module>
         <module>tt-dps-stream</module>
+        <module>tt-dps-rest-provider</module>
     </modules>
 
     <properties>
@@ -21,6 +22,7 @@
         <scala.binary.version>2.12</scala.binary.version>
         <snowpark.version>1.2.0</snowpark.version>
         <log4j.version>2.17.2</log4j.version>
+        <scalatra.version>2.8.2</scalatra.version>
         <main.class/>
         <fatjar.final.name>${project.artifactId}-${project.version}</fatjar.final.name>
     </properties>
@@ -68,7 +70,26 @@
                 <artifactId>log4j-slf4j-impl</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.scalatra</groupId>
+                <artifactId>scalatra_2.12</artifactId>
+                <version>${scalatra.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.scalatra</groupId>
+                <artifactId>scalatra-json_2.12</artifactId>
+                <version>${scalatra.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-webapp</artifactId>
+                <version>9.4.44.v20210927</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>9.4.44.v20210927</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

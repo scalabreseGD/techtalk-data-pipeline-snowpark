@@ -73,7 +73,7 @@ object SnowflakeUtils {
 
   def merge(
       tableName: String,
-      sourceDataFrame: DataFrame,
+      sourceDataFrame: DataFrameGenFromSession,
       joinCriteria: JoinCriteria,
       whenMatchedExtraCondition: Column = lit(true),
       matchedOperation: MatchedClauseBuilder => MergeBuilder = null,
@@ -81,9 +81,10 @@ object SnowflakeUtils {
       notMatchedOperation: NotMatchedClauseBuilder => MergeBuilder = null
   )(implicit sessionManager: SessionManager): Unit = {
     val target = generateDfFromTableName(tableName)(sessionManager.get)
+    val source = sourceDataFrame(sessionManager.get)
     val mergeBuilder: MergeBuilder = target.merge(
-      sourceDataFrame,
-      joinCriteria(sourceDataFrame, target)
+      source,
+      joinCriteria(source, target)
     )
 
     Option(matchedOperation)

@@ -1,4 +1,4 @@
-package com.griddynamics.common.generator
+package com.griddynamics.common
 
 import com.snowflake.snowpark.Row
 import com.snowflake.snowpark.types.{

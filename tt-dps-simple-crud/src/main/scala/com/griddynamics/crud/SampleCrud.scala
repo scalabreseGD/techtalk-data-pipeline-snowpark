@@ -1,17 +1,16 @@
 package com.griddynamics.crud
 
 import com.griddynamics.common.SnowflakeUtils.JoinCriteria
-import com.griddynamics.common.generator.generateIndustryDataFrame
 import com.griddynamics.common.{SnowflakeUtils, pipelineConfigs, sessionManager}
-import com.snowflake.snowpark.SaveMode
 import com.snowflake.snowpark.functions._
+import com.snowflake.snowpark.{SaveMode, TableFunction}
 
 object SampleCrud {
 
   def insertSampleIndustryCode(numRecord: Int): Unit = {
 
     SnowflakeUtils.writeToTable(
-      session => generateIndustryDataFrame(numRecord),
+      session => session.tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord)),
       SaveMode.Overwrite,
       pipelineConfigs.getOrElse(
         "industry-code",
@@ -44,8 +43,7 @@ object SampleCrud {
   }
 
   def performMerge(): Unit = {
-    val sourceDf =
-      generateIndustryDataFrame(sessionManager.get, 1000)
+    val sourceDf = sessionManager.get.tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(10000))
     val firstTwoLectersDistrictCode: JoinCriteria = (source, destination) => {
       substring(source("districtCode"), lit(0), lit(2))
         .equal_to(substring(destination("districtCode"), lit(0), lit(2)))
@@ -54,7 +52,7 @@ object SampleCrud {
     SnowflakeUtils.merge(
       pipelineConfigs
         .getOrElse("industry-code", throw new Error("Table not found")),
-      sourceDf,
+      session => sourceDf,
       firstTwoLectersDistrictCode,
       notMatchedOperation = merge =>
         merge.insert(

@@ -1,6 +1,6 @@
 package com.griddynamics.common
 
-import com.griddynamics.common.generator.Types.{Employee, IndustryCode}
+import Types.{Employee, IndustryCode}
 import com.snowflake.snowpark.{Row, Session}
 import com.snowflake.snowpark.types.StructType
 import com.snowflake.snowpark.udtf.UDTF1

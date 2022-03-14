@@ -25,7 +25,7 @@ object SnowflakeUtils {
     dataFrame.write.mode(saveMode).saveAsTable(tableName)
   }
 
-  def writeBronzeLayer(
+  def writeToTable(
       dataframeGenerator: DataFrameGenFromSession,
       saveMode: SaveMode,
       tableName: String
@@ -39,7 +39,7 @@ object SnowflakeUtils {
       destinationTableName: String,
       saveMode: SaveMode
   )(implicit sessionManager: SessionManager): Unit = {
-    writeBronzeLayer(
+    writeToTable(
       generateDfFromTableName(sourceTable).andThen(transformer),
       saveMode,
       destinationTableName

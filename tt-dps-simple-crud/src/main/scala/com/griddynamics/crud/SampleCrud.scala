@@ -1,7 +1,7 @@
 package com.griddynamics.crud
 
-import com.griddynamics.common.SnowflakeWriter.JoinCriteria
-import com.griddynamics.common.{SnowflakeWriter, sessionManager}
+import com.griddynamics.common.SnowflakeUtils.JoinCriteria
+import com.griddynamics.common.{SnowflakeUtils, pipelineConfigs, sessionManager}
 import com.snowflake.snowpark.functions._
 import com.snowflake.snowpark.{DataFrame, SaveMode, Session}
 
@@ -27,7 +27,6 @@ object SampleCrud {
         .setScale(2, RoundingMode.CEILING)
         .toDouble
     )
-//    val viewName = "temp_industry_code_" + System.currentTimeMillis()
     session
       .createDataFrame(industries)
       .cacheResult()
@@ -35,27 +34,33 @@ object SampleCrud {
 
   def insertSampleIndustryCode(numRecord: Int): Unit = {
 
-    SnowflakeWriter.writeBronzeLayer(
+    SnowflakeUtils.writeBronzeLayer(
       session => generateIndustryDataFrame(session, numRecord),
       SaveMode.Overwrite,
-      "INDUSTRY_CODE"
+      pipelineConfigs.getOrElse(
+        "industry-code",
+        throw new Error("Table not found")
+      )
     )
-    SnowflakeWriter.writeFromTableToTable(
-      "INDUSTRY_CODE",
+    SnowflakeUtils.writeFromTableToTable(
+      pipelineConfigs
+        .getOrElse("industry-code", throw new Error("Table not found")),
       simonTestDataframe =>
         simonTestDataframe.where(
           contains(col("districtCode"), lit("L"))
             .or(contains(col("districtCode"), lit("D")))
         ),
-      "INDUSTRY_CODE_L_OR_D",
+      pipelineConfigs
+        .getOrElse("industry-code-l-or-d", throw new Error("Table not found")),
       SaveMode.Overwrite
     )
 
   }
 
   def performUpdate(): Unit = {
-    SnowflakeWriter.update(
-      "INDUSTRY_CODE_L_OR_D",
+    SnowflakeUtils.update(
+      pipelineConfigs
+        .getOrElse("industry-code-l-or-d", throw new Error("Table not found")),
       condition = startswith(lower(col("districtCode")), lit("d")),
       assignments =
         Map("sizeInSquareMeters" -> col("sizeInSquareMeters") * lit(1000))
@@ -63,14 +68,16 @@ object SampleCrud {
   }
 
   def performMerge(): Unit = {
-    val sourceDf = generateIndustryDataFrame(sessionManager.get, 1000)
+    val sourceDf =
+      generateIndustryDataFrame(sessionManager.get, 1000).cacheResult()
     val firstTwoLectersDistrictCode: JoinCriteria = (source, destination) => {
       substring(source("districtCode"), lit(0), lit(2))
         .equal_to(substring(destination("districtCode"), lit(0), lit(2)))
     }
 
-    SnowflakeWriter.merge(
-      "INDUSTRY_CODE",
+    SnowflakeUtils.merge(
+      pipelineConfigs
+        .getOrElse("industry-code", throw new Error("Table not found")),
       sourceDf,
       firstTwoLectersDistrictCode,
       notMatchedOperation = merge =>
@@ -81,4 +88,5 @@ object SampleCrud {
         )
     )
   }
+
 }

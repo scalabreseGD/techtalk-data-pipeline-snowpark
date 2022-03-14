@@ -1,24 +1,13 @@
 package com.griddynamics.common
 
-import com.snowflake.snowpark.functions.{col, lit}
-import com.snowflake.snowpark.{
-  Column,
-  DataFrame,
-  MatchedClauseBuilder,
-  MergeBuilder,
-  NotMatchedClauseBuilder,
-  SaveMode,
-  Session,
-  Updatable
-}
+import com.snowflake.snowpark.functions.lit
+import com.snowflake.snowpark._
 
-import java.util.UUID
-
-object SnowflakeWriter {
+object SnowflakeUtils {
 
   type DataFrameGenFromSession = Session => DataFrame
   type DataFrameTransformer = DataFrame => DataFrame
-  trait JoinCriteria extends Function2[DataFrame, DataFrame, Column] {
+  trait JoinCriteria extends ((DataFrame, DataFrame) => Column) {
     def apply(source: DataFrame, target: DataFrame): Column
   }
 
@@ -92,7 +81,10 @@ object SnowflakeWriter {
       notMatchedOperation: NotMatchedClauseBuilder => MergeBuilder = null
   )(implicit sessionManager: SessionManager): Unit = {
     val target = generateDfFromTableName(tableName)(sessionManager.get)
-    val mergeBuilder: MergeBuilder = target.merge(sourceDataFrame, joinCriteria(sourceDataFrame, target))
+    val mergeBuilder: MergeBuilder = target.merge(
+      sourceDataFrame,
+      joinCriteria(sourceDataFrame, target)
+    )
 
     Option(matchedOperation)
       .map(_.apply(mergeBuilder.whenMatched(whenMatchedExtraCondition)))
@@ -103,5 +95,17 @@ object SnowflakeWriter {
       )
       .getOrElse(mergeBuilder)
       .collect()
+  }
+
+  def createStreamOnTable(
+      streamName: String,
+      sourceTable: String,
+      withReplace: Boolean = false,
+      showInitialRows: Boolean = false
+  )(implicit sessionManager: SessionManager): Unit = {
+    val session = sessionManager.get
+    session.sql(
+      s"CREATE ${if (withReplace) "OR REPLACE" else ""} STREAM $streamName ON TABLE $sourceTable ${if (showInitialRows) "SHOW_INITIAL_ROWS = TRUE" else ""}"
+    ).count()
   }
 }

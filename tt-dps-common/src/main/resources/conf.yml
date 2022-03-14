@@ -4,3 +4,9 @@ snowflake-password: "=5*7wVnf)z#$c(G8"
 snowflake-warehouse: "RA_UA_WH"
 snowflake-db: 'RDS_DEV'
 snowflake-schema: "BWW"
+
+pipeline:
+  tables:
+    industry-code: "INDUSTRY_CODE"
+    industry-code-l-or-d: "INDUSTRY_CODE_L_OR_D"
+    industry-code-stream: "INDUSTRY_CODE_STREAM"

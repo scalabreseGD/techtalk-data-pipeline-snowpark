@@ -1,12 +1,8 @@
 package com.griddynamics.stream
 
-import com.griddynamics.common.generator.{
-  generateEmployeeDataFrame,
-  generateIndustryDataFrame
-}
 import com.griddynamics.common.{SnowflakeUtils, pipelineConfigs, sessionManager}
-import com.snowflake.snowpark.SaveMode
 import com.snowflake.snowpark.functions.{col, lit, substring, upper}
+import com.snowflake.snowpark.{SaveMode, TableFunction}
 
 object SampleStream {
 
@@ -20,20 +16,10 @@ object SampleStream {
     )
   }
 
-  def createEmployeeCodeStream(): Unit = {
-    SnowflakeUtils.createStreamOnTable(
-      pipelineConfigs
-        .getOrElse("industry-code-stream", throw new Error("Stream not found")),
-      pipelineConfigs
-        .getOrElse("employee-code", throw new Error("Stream not found")),
-      withReplace = true
-    )
-  }
-
   def generateRecordsIntoIndustryCode(numRecord: Int): Unit = {
     SnowflakeUtils.writeToTable(
       dataframeGenerator =
-        session => generateIndustryDataFrame(session, numRecord),
+        session => session.tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord)),
       SaveMode.Append,
       tableName = pipelineConfigs.getOrElse(
         "industry-code",
@@ -66,7 +52,9 @@ object SampleStream {
   def generateRecordsIntoEmployeeCode(numRecord: Int): Unit = {
     SnowflakeUtils.writeToTable(
       dataframeGenerator =
-        session => generateEmployeeDataFrame(session, numRecord),
+        session => {
+          session.tableFunction(TableFunction("GENERATE_EMPLOYEES"),lit(numRecord))
+        },
       SaveMode.Overwrite,
       tableName = pipelineConfigs.getOrElse(
         "employee-code",

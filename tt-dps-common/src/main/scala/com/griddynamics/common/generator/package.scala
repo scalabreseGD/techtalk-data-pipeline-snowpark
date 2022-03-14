@@ -1,5 +1,6 @@
 package com.griddynamics.common
 
+import com.griddynamics.common.generator.Types.{Employee, IndustryCode}
 import com.snowflake.snowpark.{DataFrame, Session}
 
 import scala.math.BigDecimal.RoundingMode
@@ -7,14 +8,6 @@ import scala.util.Random
 
 package object generator {
   private val random: Random = new Random()
-
-  case class IndustryCode(
-      districtCode: String,
-      departmentCode: String,
-      sizeInSquareMeters: Double
-  )
-
-  case class Employee(name: String, Surname: String, districtCodeFirst2: String)
 
   def generateIndustryDataFrame(session: Session, numRecord: Int): DataFrame = {
     val industries = for {
@@ -31,7 +24,7 @@ package object generator {
       .cacheResult()
   }
 
-  def generateEmployeeDataFrame(session: Session, numRecord: Int):DataFrame = {
+  def generateEmployeeDataFrame(session: Session, numRecord: Int): DataFrame = {
     val employees = for {
       _ <- 0 to numRecord
     } yield Employee(

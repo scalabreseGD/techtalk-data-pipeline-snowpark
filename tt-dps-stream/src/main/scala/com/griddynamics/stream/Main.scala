@@ -1,7 +1,7 @@
 package com.griddynamics.stream
 
-import com.griddynamics.common.udfs.generateUDTFs
 import com.griddynamics.common.sessionManager
+import com.griddynamics.common.udfs.generateUDTFs
 
 object Main {
 
@@ -10,7 +10,7 @@ object Main {
     SampleStream.generateRecordsIntoEmployeeCode(5000)
     SampleStream.createIndustryCodeStream()
     SampleStream.generateRecordsIntoIndustryCode(2000)
-    SampleStream.cleanWriteStreamToTable()
+    SampleStream.cleanWriteStreamToTableIndustryCodeFirst2()
     SampleStream.generateRecordsIntoIndustryCode(2000)
     SampleStream.industryStreamEmployee()
   }

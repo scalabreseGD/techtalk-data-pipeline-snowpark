@@ -1,7 +1,7 @@
 package com.griddynamics.common
 
-import com.snowflake.snowpark.functions.lit
 import com.snowflake.snowpark._
+import com.snowflake.snowpark.functions.lit
 
 object SnowflakeUtils {
 

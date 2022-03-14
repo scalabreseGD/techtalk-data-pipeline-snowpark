@@ -1,12 +1,7 @@
 package com.griddynamics.common
 
 import com.snowflake.snowpark.Row
-import com.snowflake.snowpark.types.{
-  DoubleType,
-  StringType,
-  StructField,
-  StructType
-}
+import com.snowflake.snowpark.types.{DoubleType, StringType, StructField, StructType}
 
 object Types {
 

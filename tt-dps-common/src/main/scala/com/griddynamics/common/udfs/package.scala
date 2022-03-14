@@ -1,9 +1,9 @@
 package com.griddynamics.common
 
-import Types.{Employee, IndustryCode}
-import com.snowflake.snowpark.{Row, Session}
+import com.griddynamics.common.Types.{Employee, IndustryCode}
 import com.snowflake.snowpark.types.StructType
 import com.snowflake.snowpark.udtf.UDTF1
+import com.snowflake.snowpark.{Row, Session}
 
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Random

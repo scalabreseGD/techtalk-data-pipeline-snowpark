@@ -28,7 +28,7 @@ object SampleStream {
     )
   }
 
-  def cleanWriteStreamToTable(): Unit = {
+  def cleanWriteStreamToTableIndustryCodeFirst2(): Unit = {
     SnowflakeUtils.writeFromTableToTable(
       sourceTable = pipelineConfigs
         .getOrElse("industry-code-stream", throw new Error("Stream not found")),

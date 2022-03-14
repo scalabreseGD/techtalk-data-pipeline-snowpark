@@ -2,10 +2,8 @@ package com.griddynamics
 
 import org.yaml.snakeyaml.Yaml
 
-import scala.annotation.tailrec
-import scala.io.Source
 import scala.collection.JavaConverters._
-import scala.collection.mutable
+import scala.io.Source
 
 package object common {
 

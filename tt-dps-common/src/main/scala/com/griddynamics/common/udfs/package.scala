@@ -6,9 +6,8 @@ import com.snowflake.snowpark.udtf.UDTF1
 import com.snowflake.snowpark.{Row, Session, UserDefinedFunction}
 
 import java.net.URI
-import java.net.http.{HttpClient, HttpRequest}
 import java.net.http.HttpResponse.BodyHandlers
-import scala.collection.immutable
+import java.net.http.{HttpClient, HttpRequest}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Random
 
@@ -57,7 +56,8 @@ package object udfs {
     override def endPartition(): Iterable[Row] = Array.empty[Row]
   }
 
-  def generateUDTFs(session: Session): Unit = {
+  def generateUDTFs()(implicit sessionManager: SessionManager): Unit = {
+    val session = sessionManager.get
     session.udtf.registerTemporary("GENERATE_INDUSTRIES", new GenerateIndustriesUDT())
     session.udtf.registerTemporary("GENERATE_EMPLOYEES", new GenerateEmployeesUDT())
   }

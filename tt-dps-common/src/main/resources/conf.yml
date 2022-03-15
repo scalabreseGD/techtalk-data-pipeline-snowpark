@@ -1,10 +1,10 @@
-#snowflake-url: "https://inspire.east-us-2.azure.snowflakecomputing.com:443"
+#snowflake-url: "https://nl76762.us-central1.gcp.snowflakecomputing.com:443"
 snowflake-url: "https://LL76183.east-us-2.azure.snowflakecomputing.com:443"
 #snowflake-user: "RA_OBJOWNR_DEV"
 snowflake-user: "demo"
 #snowflake-password: "=5*7wVnf)z#$c(G8"
 snowflake-password: "Simon123!"
-#snowflake-warehouse: "RA_UA_WH"
+#snowflake-warehouse: "WH_SCALABRESE"
 snowflake-warehouse: "COMPUTE_WH"
 #snowflake-db: 'RDS_DEV'
 snowflake-db: 'DEMO'
@@ -22,6 +22,7 @@ pipeline:
 
 servlets:
   generator:
+    baseUrl: "http://localhost"
     basepath: "/generator"
     port: 8100
     endpoints:

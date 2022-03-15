@@ -8,6 +8,7 @@ import scala.io.Source
 object ConfigUtils {
 
   case class Servlet(
+      baseUrl: String,
       basePath: String,
       port: Int,
       endpoints: Map[String, String]
@@ -50,6 +51,7 @@ object ConfigUtils {
       .map { case x: Map[String, Map[String, Any]] =>
         Servlets(
           Servlet(
+            x.getOrElse("baseUrl", "").asInstanceOf[String],
             x.getOrElse("basepath", "").asInstanceOf[String],
             x.getOrElse("port", null).asInstanceOf[Int],
             endpoints = x

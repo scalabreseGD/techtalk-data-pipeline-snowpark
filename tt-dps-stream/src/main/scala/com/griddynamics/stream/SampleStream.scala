@@ -19,54 +19,58 @@ object SampleStream {
   }
 
   def generateRecordsIntoIndustryCode(numRecord: Int): Unit = {
-    SnowflakeUtils.writeToTable(
-      dataframeGenerator = session =>
-        session
-          .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord)),
-      SaveMode.Append,
-      tableName = pipelineConfigs.getOrElse(
-        "industry-code",
-        throw new Error("Stream not found")
+    val session = sessionManager.get
+    session
+      .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
+      .write
+      .mode(SaveMode.Append)
+      .saveAsTable(
+        pipelineConfigs.getOrElse(
+          "industry-code",
+          throw new Error("Stream not found")
+        )
       )
-    )
   }
 
   def cleanWriteStreamToTableIndustryCodeFirst2(): Unit = {
-    SnowflakeUtils.writeFromTableToTable(
-      sourceTable = pipelineConfigs
-        .getOrElse("industry-code-stream", throw new Error("Stream not found")),
-      transformer = dataframe =>
-        dataframe.select(
-          substring(
-            upper(col("districtCode")),
-            lit(0),
-            lit(2)
-          ).as("districtCodeFirst2"),
-          col("districtCode"),
-          col("departmentCode"),
-          col("sizeInSquareMeters")
-        ),
-      destinationTableName = pipelineConfigs
-        .getOrElse("industry-code-first2", throw new Error("Table not found")),
-      saveMode = SaveMode.Overwrite
-    )
+    val session = sessionManager.get
+    val industryCodeStreamName = pipelineConfigs
+      .getOrElse("industry-code-stream", throw new Error("Stream not found"))
+    val industryCodeNameFirst2 = pipelineConfigs
+      .getOrElse("industry-code-first2", throw new Error("Table not found"))
+    val industryCodeStreamDf = session.table(industryCodeStreamName)
+    industryCodeStreamDf
+      .select(
+        substring(
+          upper(col("districtCode")),
+          lit(0),
+          lit(2)
+        ).as("districtCodeFirst2"),
+        col("districtCode"),
+        col("departmentCode"),
+        col("sizeInSquareMeters")
+      )
+      .write
+      .mode(SaveMode.Overwrite)
+      .saveAsTable(industryCodeNameFirst2)
   }
 
   def generateRecordsIntoEmployeeCode(numRecord: Int): Unit = {
-    SnowflakeUtils.writeToTable(
-      dataframeGenerator = session => {
-        session
-          .tableFunction(TableFunction("GENERATE_EMPLOYEES"), lit(numRecord))
-      },
-      SaveMode.Overwrite,
-      tableName = pipelineConfigs.getOrElse(
-        "employee-code",
-        throw new Error("Stream not found")
+    val session = sessionManager.get
+    session
+      .tableFunction(TableFunction("GENERATE_EMPLOYEES"), lit(numRecord))
+      .write
+      .mode(SaveMode.Overwrite)
+      .saveAsTable(
+        pipelineConfigs.getOrElse(
+          "employee-code",
+          throw new Error("Stream not found")
+        )
       )
-    )
   }
 
   def industryStreamEmployee(): Unit = {
+    val session = sessionManager.get
     val employeeTableName = pipelineConfigs.getOrElse(
       "employee-code",
       throw new Error("Table not found")
@@ -80,28 +84,25 @@ object SampleStream {
       throw new Error("Table not found")
     )
 
-    val codeFirstTwoUpperColumn = substring(
-      upper(col("districtCode")),
-      lit(0),
-      lit(2)
-    )
-
-    SnowflakeUtils.writeFromTableToTable2(
-      sourceTablesName = (employeeTableName, industryCodeStreamName),
-      destinationTableName = destinationEmployeeIndustry,
-      saveMode = SaveMode.Overwrite,
-      transformer = (employee, industryStream) => {
-        val joined = employee.join(
-          industryStream,
-          employee("districtCodeFirst2") === codeFirstTwoUpperColumn
+    val employeeDf = session.table(employeeTableName)
+    val industryCodeStreamDf = session.table(industryCodeStreamName)
+    employeeDf
+      .join(
+        industryCodeStreamDf,
+        employeeDf("districtCodeFirst2") === substring(
+          upper(industryCodeStreamDf("districtCode")),
+          lit(0),
+          lit(2)
         )
-        joined.select(
-          employee("*"),
-          col("districtCode"),
-          col("departmentCode"),
-          col("sizeInSquareMeters")
-        )
-      }
-    )
+      )
+      .select(
+        employeeDf("*"),
+        col("districtCode"),
+        col("departmentCode"),
+        col("sizeInSquareMeters")
+      )
+      .write
+      .mode(SaveMode.Append)
+      .saveAsTable(destinationEmployeeIndustry)
   }
 }

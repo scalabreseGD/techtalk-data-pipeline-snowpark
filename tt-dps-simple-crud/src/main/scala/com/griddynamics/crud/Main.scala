@@ -5,7 +5,7 @@ import com.griddynamics.common.udfs.generateUDTFs
 
 object Main {
   def main(args: Array[String]): Unit = {
-    generateUDTFs(session = sessionManager.get)
+    generateUDTFs()
     SampleCrud.insertSampleIndustryCode(100)
     SampleCrud.performUpdate()
     SampleCrud.performMerge()

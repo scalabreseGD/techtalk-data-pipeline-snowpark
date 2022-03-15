@@ -2,72 +2,79 @@ package com.griddynamics.crud
 
 import com.griddynamics.common.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.Implicits.sessionManager
-import com.griddynamics.common.SnowflakeUtils
-import com.griddynamics.common.SnowflakeUtils.JoinCriteria
 import com.snowflake.snowpark.functions._
 import com.snowflake.snowpark.{SaveMode, TableFunction}
 
 object SampleCrud {
 
   def insertSampleIndustryCode(numRecord: Int): Unit = {
-
-    SnowflakeUtils.writeToTable(
-      session =>
-        session
-          .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord)),
-      SaveMode.Overwrite,
-      pipelineConfigs.getOrElse(
-        "industry-code",
-        throw new Error("Table not found")
+    val session = sessionManager.get
+    session
+      .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
+      .write
+      .mode(SaveMode.Overwrite)
+      .saveAsTable(
+        pipelineConfigs.getOrElse(
+          "industry-code",
+          throw new Error("Table not found")
+        )
       )
-    )
-    SnowflakeUtils.writeFromTableToTable(
-      pipelineConfigs
-        .getOrElse("industry-code", throw new Error("Table not found")),
-      simonTestDataframe =>
-        simonTestDataframe.where(
-          contains(col("districtCode"), lit("L"))
-            .or(contains(col("districtCode"), lit("D")))
-        ),
-      pipelineConfigs
-        .getOrElse("industry-code-l-or-d", throw new Error("Table not found")),
-      SaveMode.Overwrite
-    )
 
+    session
+      .table(
+        pipelineConfigs
+          .getOrElse("industry-code", throw new Error("Table not found"))
+      )
+      .where(
+        contains(col("districtCode"), lit("L"))
+          .or(contains(col("districtCode"), lit("D")))
+      )
+      .write
+      .mode(SaveMode.Overwrite)
+      .saveAsTable(
+        pipelineConfigs
+          .getOrElse("industry-code-l-or-d", throw new Error("Table not found"))
+      )
   }
 
   def performUpdate(): Unit = {
-    SnowflakeUtils.update(
-      pipelineConfigs
-        .getOrElse("industry-code-l-or-d", throw new Error("Table not found")),
-      condition = startswith(lower(col("districtCode")), lit("d")),
-      assignments =
-        Map("sizeInSquareMeters" -> col("sizeInSquareMeters") * lit(1000))
-    )
+    val session = sessionManager.get
+    session
+      .table(
+        pipelineConfigs
+          .getOrElse("industry-code-l-or-d", throw new Error("Table not found"))
+      )
+      .update(
+        assignments =
+          Map("sizeInSquareMeters" -> col("sizeInSquareMeters") * lit(1000)),
+        condition = startswith(lower(col("districtCode")), lit("d"))
+      )
   }
 
   def performMerge(): Unit = {
-    val sourceDf = sessionManager.get.tableFunction(
+    val session = sessionManager.get
+    val sourceDf = session.tableFunction(
       TableFunction("GENERATE_INDUSTRIES"),
       lit(10000)
     )
-    val firstTwoLectersDistrictCode: JoinCriteria = (source, destination) => {
-      substring(source("districtCode"), lit(0), lit(2))
-        .equal_to(substring(destination("districtCode"), lit(0), lit(2)))
-    }
 
-    SnowflakeUtils.merge(
-      pipelineConfigs
-        .getOrElse("industry-code", throw new Error("Table not found")),
-      session => sourceDf,
-      firstTwoLectersDistrictCode,
-      notMatchedOperation = merge =>
-        merge.insert(
-          sourceDf.schema.fields
-            .map(field => (field.name, sourceDf(field.name)))
-            .toMap
-        )
-    )
+    val target = session
+      .table(
+        pipelineConfigs
+          .getOrElse("industry-code", throw new Error("Table not found"))
+      )
+    target
+      .merge(
+        sourceDf,
+        substring(sourceDf("districtCode"), lit(0), lit(2))
+          === substring(target("districtCode"), lit(0), lit(2))
+      )
+      .whenNotMatched
+      .insert(
+        sourceDf.schema.fields
+          .map(field => (field.name, sourceDf(field.name)))
+          .toMap
+      )
   }
 
 }

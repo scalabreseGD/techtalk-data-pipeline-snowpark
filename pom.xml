@@ -13,6 +13,7 @@
         <module>tt-dps-simple-crud</module>
         <module>tt-dps-stream</module>
         <module>tt-dps-rest-provider</module>
+        <module>tt-dps-pipeline-rest</module>
     </modules>
 
     <properties>
@@ -93,6 +94,11 @@
             <dependency>
                 <groupId>org.json4s</groupId>
                 <artifactId>json4s-jackson_2.12</artifactId>
+                <version>4.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json4s</groupId>
+                <artifactId>json4s-native_2.12</artifactId>
                 <version>4.0.3</version>
             </dependency>
         </dependencies>

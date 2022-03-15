@@ -3,8 +3,11 @@ package com.griddynamics.common
 import com.griddynamics.common.Types.{Employee, IndustryCode}
 import com.snowflake.snowpark.types.StructType
 import com.snowflake.snowpark.udtf.UDTF1
-import com.snowflake.snowpark.{Row, Session}
+import com.snowflake.snowpark.{Row, Session, UserDefinedFunction}
 
+import java.net.URI
+import java.net.http.{HttpClient, HttpRequest}
+import java.net.http.HttpResponse.BodyHandlers
 import scala.collection.immutable
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Random
@@ -57,5 +60,16 @@ package object udfs {
   def generateUDTFs(session: Session): Unit = {
     session.udtf.registerTemporary("GENERATE_INDUSTRIES", new GenerateIndustriesUDT())
     session.udtf.registerTemporary("GENERATE_EMPLOYEES", new GenerateEmployeesUDT())
+  }
+
+  def publishUdfs(session: Session):UserDefinedFunction = {
+    session.udf.registerTemporary("getRestSample" , () => {
+      val get = HttpRequest
+        .newBuilder(new URI("https://gorest.co.in/public/v2/users"))
+        .GET()
+        .build()
+      val res = HttpClient.newHttpClient().send(get, BodyHandlers.ofString)
+      res.body()
+    })
   }
 }

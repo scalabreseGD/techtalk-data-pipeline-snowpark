@@ -19,3 +19,11 @@ pipeline:
     industry-code-stream: "INDUSTRY_CODE_STREAM"
     industry-code-first2: "INDUSTRY_CODE_FIRST2"
     industry-employee: "EMPLOYEE_INDUSTRY"
+
+servlets:
+  generator:
+    basepath: "/generator"
+    port: 8100
+    endpoints:
+      generate-industries: "/getIndustries"
+      generate-employees: "/getEmployees"

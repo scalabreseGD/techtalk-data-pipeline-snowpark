@@ -1,6 +1,6 @@
 package com.griddynamics.stream
 
-import com.griddynamics.common.sessionManager
+import com.griddynamics.common.Implicits.sessionManager
 import com.griddynamics.common.udfs.generateUDTFs
 
 object Main {

@@ -1,4 +1,5 @@
-import com.griddynamics.rest.{BaseApp, Bootstrap, RestServlet}
+import com.griddynamics.rest.servlet.RestServlet
+import com.griddynamics.rest.{BaseApp, Bootstrap}
 
 class ScalatraBootstrap extends Bootstrap {
   override def servlets() = Seq(new RestServlet)
@@ -8,8 +9,4 @@ object ScalatraBootstrap extends BaseApp {
 
 
   startServer()
-
-  override def basePath() = "/meow"
-
-  override def port() = 8080
 }

@@ -1,6 +1,8 @@
 package com.griddynamics.stream
 
-import com.griddynamics.common.{SnowflakeUtils, pipelineConfigs, sessionManager}
+import com.griddynamics.common.ConfigUtils.pipelineConfigs
+import com.griddynamics.common.Implicits.sessionManager
+import com.griddynamics.common.SnowflakeUtils
 import com.snowflake.snowpark.functions.{col, lit, substring, upper}
 import com.snowflake.snowpark.{SaveMode, TableFunction}
 
@@ -18,8 +20,9 @@ object SampleStream {
 
   def generateRecordsIntoIndustryCode(numRecord: Int): Unit = {
     SnowflakeUtils.writeToTable(
-      dataframeGenerator =
-        session => session.tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord)),
+      dataframeGenerator = session =>
+        session
+          .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord)),
       SaveMode.Append,
       tableName = pipelineConfigs.getOrElse(
         "industry-code",
@@ -51,10 +54,10 @@ object SampleStream {
 
   def generateRecordsIntoEmployeeCode(numRecord: Int): Unit = {
     SnowflakeUtils.writeToTable(
-      dataframeGenerator =
-        session => {
-          session.tableFunction(TableFunction("GENERATE_EMPLOYEES"),lit(numRecord))
-        },
+      dataframeGenerator = session => {
+        session
+          .tableFunction(TableFunction("GENERATE_EMPLOYEES"), lit(numRecord))
+      },
       SaveMode.Overwrite,
       tableName = pipelineConfigs.getOrElse(
         "employee-code",

@@ -16,7 +16,5 @@ object Main {
       SampleStream.industryStreamEmployee(session)
     })
 
-//    SampleStream.generateRecordsIntoIndustryCode(2000)
-
   }
 }

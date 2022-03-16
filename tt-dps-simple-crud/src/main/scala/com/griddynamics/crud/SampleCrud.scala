@@ -10,7 +10,7 @@ object SampleCrud {
   def insertSampleIndustryCode(numRecord: Int): Unit = {
     val session = sessionManager.get
     session
-      .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
+        .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
       .write
       .mode(SaveMode.Overwrite)
       .saveAsTable(

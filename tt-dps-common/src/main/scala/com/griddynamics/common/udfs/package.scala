@@ -1,6 +1,7 @@
 package com.griddynamics.common
 
 import com.griddynamics.common.Types.{Employee, IndustryCode}
+import com.snowflake.snowpark.functions.{array_construct, callUDF, col, lit}
 import com.snowflake.snowpark.types.StructType
 import com.snowflake.snowpark.udtf.UDTF1
 import com.snowflake.snowpark.{Row, Session, UserDefinedFunction}
@@ -13,7 +14,7 @@ import scala.util.Random
 
 package object udfs {
 
-  def generateIndustries(numRecords:Int): Seq[IndustryCode] = {
+  def generateIndustries(numRecords: Int): Seq[IndustryCode] = {
     val random = new Random()
     for {
       _ <- 0 to numRecords
@@ -26,7 +27,7 @@ package object udfs {
     )
   }
 
-  def generateEmployees(numRecords:Int): Seq[Employee] = {
+  def generateEmployees(numRecords: Int): Seq[Employee] = {
     val random = new Random()
     for {
       _ <- 0 to numRecords
@@ -39,7 +40,7 @@ package object udfs {
 
   private class GenerateIndustriesUDT extends UDTF1[Int] {
     override def process(numRecords: Int): Iterable[Row] = {
-      generateIndustries(numRecords) map(_.asRow)
+      generateIndustries(numRecords) map (_.asRow)
     }
 
     override def outputSchema(): StructType = IndustryCode.schema
@@ -49,7 +50,8 @@ package object udfs {
 
   private class GenerateEmployeesUDT extends UDTF1[Int] {
 
-    override def process(numRecords: Int): Iterable[Row] = generateEmployees(numRecords) map(_.asRow)
+    override def process(numRecords: Int): Iterable[Row] =
+      generateEmployees(numRecords) map (_.asRow)
 
     override def outputSchema(): StructType = Employee.schema
 
@@ -58,18 +60,13 @@ package object udfs {
 
   def generateUDTFs()(implicit sessionManager: SessionManager): Unit = {
     val session = sessionManager.get
-    session.udtf.registerTemporary("GENERATE_INDUSTRIES", new GenerateIndustriesUDT())
-    session.udtf.registerTemporary("GENERATE_EMPLOYEES", new GenerateEmployeesUDT())
-  }
-
-  def publishUdfs(session: Session):UserDefinedFunction = {
-    session.udf.registerTemporary("getRestSample" , () => {
-      val get = HttpRequest
-        .newBuilder(new URI("https://gorest.co.in/public/v2/users"))
-        .GET()
-        .build()
-      val res = HttpClient.newHttpClient().send(get, BodyHandlers.ofString)
-      res.body()
-    })
+    session.udtf.registerTemporary(
+      "GENERATE_INDUSTRIES",
+      new GenerateIndustriesUDT()
+    )
+    session.udtf.registerTemporary(
+      "GENERATE_EMPLOYEES",
+      new GenerateEmployeesUDT()
+    )
   }
 }

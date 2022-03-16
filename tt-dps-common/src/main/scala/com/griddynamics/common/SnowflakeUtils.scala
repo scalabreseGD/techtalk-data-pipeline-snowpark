@@ -29,12 +29,10 @@ object SnowflakeUtils {
       implicit sessionManager: SessionManager
   ): Unit = {
     val session = sessionManager.get
-    enableTransaction
-      .andThen(innerSession => {
-        transactionalOperation(innerSession)
-        innerSession
-      })
-      .andThen(commit)
-      .apply(session)
+    val enriched: Session => Unit = enableTransaction andThen { (innerSession: Session) =>
+      transactionalOperation(innerSession)
+      innerSession
+    } andThen commit
+    enriched(session)
   }
 }

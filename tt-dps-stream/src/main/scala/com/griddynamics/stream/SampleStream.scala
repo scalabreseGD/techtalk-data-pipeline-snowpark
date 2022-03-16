@@ -50,6 +50,7 @@ object SampleStream {
       .getOrElse("industry-code-stream", throw new Error("Stream not found"))
     val industryCodeNameFirst2 = pipelineConfigs
       .getOrElse("industry-code-first2", throw new Error("Table not found"))
+    session.table(industryCodeNameFirst2).delete()
     val industryCodeStreamDf = session.table(industryCodeStreamName)
     industryCodeStreamDf
       .select(

@@ -1,0 +1,61 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "systemTopics_tt_dps_name": {
+            "defaultValue": "tt-dps",
+            "type": "String"
+        },
+        "StorageAccounts_gdea2ttdps0adls2_externalid": {
+            "defaultValue": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/resourceGroups/rg-gd-ea2-tt-dps/providers/Microsoft.Storage/StorageAccounts/gdea2ttdps0adls2",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.EventGrid/systemTopics",
+            "apiVersion": "2021-12-01",
+            "name": "[parameters('systemTopics_tt_dps_name')]",
+            "location": "eastus",
+            "identity": {
+                "type": "None"
+            },
+            "properties": {
+                "source": "[parameters('StorageAccounts_gdea2ttdps0adls2_externalid')]",
+                "topicType": "Microsoft.Storage.StorageAccounts"
+            }
+        },
+        {
+            "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
+            "apiVersion": "2021-12-01",
+            "name": "[concat(parameters('systemTopics_tt_dps_name'), '/', parameters('systemTopics_tt_dps_name'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventGrid/systemTopics', parameters('systemTopics_tt_dps_name'))]"
+            ],
+            "properties": {
+                "destination": {
+                    "properties": {
+                        "resourceId": "[parameters('StorageAccounts_gdea2ttdps0adls2_externalid')]",
+                        "queueName": "tt-dps",
+                        "queueMessageTimeToLiveInSeconds": 604800
+                    },
+                    "endpointType": "StorageQueue"
+                },
+                "filter": {
+                    "includedEventTypes": [
+                        "Microsoft.Storage.BlobCreated",
+                        "Microsoft.Storage.BlobDeleted"
+                    ],
+                    "enableAdvancedFilteringOnArrays": true
+                },
+                "labels": [],
+                "eventDeliverySchema": "EventGridSchema",
+                "retryPolicy": {
+                    "maxDeliveryAttempts": 30,
+                    "eventTimeToLiveInMinutes": 1440
+                }
+            }
+        }
+    ]
+}

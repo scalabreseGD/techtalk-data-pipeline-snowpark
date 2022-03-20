@@ -1,0 +1,54 @@
+[
+  {
+    "RoleAssignmentId": "03dcb9b0-9654-45a2-8645-b9af49fb6ea4",
+    "Scope": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3",
+    "DisplayName": "Simon Calabrese",
+    "SignInName": "scalabrese@griddynamics.com",
+    "RoleDefinitionName": "Contributor",
+    "RoleDefinitionId": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c",
+    "ObjectId": "07b727a1-ab6b-4be6-ac76-a6c7972246dc",
+    "ObjectType": "User",
+    "RoleAssignmentDescription": "",
+    "ConditionVersion": "",
+    "Condition": ""
+  },
+  {
+    "RoleAssignmentId": "41e80d09-a52d-4820-b3e1-6eca10c827d5",
+    "Scope": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/resourceGroups/rg-gd-ea2-tt-dps",
+    "DisplayName": "Simon Calabrese",
+    "SignInName": "scalabrese@griddynamics.com",
+    "RoleDefinitionName": "User Access Administrator",
+    "RoleDefinitionId": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/providers/Microsoft.Authorization/roleDefinitions/18d7d88d-d35e-4fb5-a5c3-7773c20a72d9",
+    "ObjectId": "07b727a1-ab6b-4be6-ac76-a6c7972246dc",
+    "ObjectType": "User",
+    "RoleAssignmentDescription": "",
+    "ConditionVersion": "",
+    "Condition": ""
+  },
+  {
+    "RoleAssignmentId": "d04e7b66-d1c2-4d48-b3aa-cf305a15968e",
+    "Scope": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/resourcegroups/rg-gd-ea2-tt-dps/providers/Microsoft.Storage/storageAccounts/gdea2ttdps0adls2",
+    "DisplayName": "SnowflakePACInt2629",
+    "SignInName": "",
+    "RoleDefinitionName": "Storage Blob Data Contributor",
+    "RoleDefinitionId": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/providers/Microsoft.Authorization/roleDefinitions/ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+    "ObjectId": "301011d9-2f56-49ed-b3c8-c0cf0c678bd8",
+    "ObjectType": "ServicePrincipal",
+    "RoleAssignmentDescription": "",
+    "ConditionVersion": "",
+    "Condition": ""
+  },
+  {
+    "RoleAssignmentId": "8332ebdf-d692-445c-b999-60b081448f2d",
+    "Scope": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/resourcegroups/rg-gd-ea2-tt-dps/providers/Microsoft.Storage/storageAccounts/gdea2ttdps0adls2",
+    "DisplayName": "SnowflakePACInt2629",
+    "SignInName": "",
+    "RoleDefinitionName": "Storage Blob Data Reader",
+    "RoleDefinitionId": "/subscriptions/4e434768-babd-4277-b535-4470ac25aab3/providers/Microsoft.Authorization/roleDefinitions/2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
+    "ObjectId": "301011d9-2f56-49ed-b3c8-c0cf0c678bd8",
+    "ObjectType": "ServicePrincipal",
+    "RoleAssignmentDescription": "",
+    "ConditionVersion": "",
+    "Condition": ""
+  }
+]

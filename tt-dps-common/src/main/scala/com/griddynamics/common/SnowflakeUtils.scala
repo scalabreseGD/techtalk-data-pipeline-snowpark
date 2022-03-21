@@ -1,12 +1,36 @@
 package com.griddynamics.common
 
-import com.snowflake.snowpark.{DataFrame, Session}
+import com.snowflake.snowpark.Session
 
 import scala.util.{Failure, Success, Try}
 
 object SnowflakeUtils {
 
   type TransactionalOperation = Session => Unit
+
+  sealed trait StreamSourceMode extends scala.AnyRef {
+    def objectType: String
+  }
+  object StreamSourceMode extends scala.AnyRef {
+    def apply(mode: String): StreamSourceMode = {
+      mode match {
+        case "TABLE" => Table
+        case "VIEW"  => View
+        case "STAGE" => Stage
+      }
+    }
+    object Table extends scala.AnyRef with StreamSourceMode {
+      override val objectType = "TABLE"
+    }
+    object View extends scala.AnyRef with StreamSourceMode {
+      override val objectType = "VIEW"
+    }
+
+    object Stage extends scala.AnyRef with StreamSourceMode {
+      override val objectType = "STAGE"
+    }
+  }
+
   private val enableTransaction: Session => Session = session => {
     session.jdbcConnection.setAutoCommit(false)
     session
@@ -17,18 +41,25 @@ object SnowflakeUtils {
     session.jdbcConnection.rollback()
     throw exception
   }
-  def createStreamOnTable(
+  def createStreamOnObjectType(
       streamName: String,
-      sourceTable: String,
+      sourceObjectName: String,
       withReplace: Boolean = false,
-      showInitialRows: Boolean = false
+      ifNotExists: Boolean = false,
+      showInitialRows: Boolean = false,
+      sourceObjectType: StreamSourceMode = StreamSourceMode.Table
   )(implicit sessionManager: SessionManager): Unit = {
     val session = sessionManager.get
+
+    val sql = s"CREATE " +
+      s" ${if (withReplace) "OR REPLACE" else ""}" +
+      s" STREAM $streamName " +
+      s" ${if(ifNotExists) "IF NOT EXISTS" else ""}" +
+      s" ON ${sourceObjectType.objectType} $sourceObjectName ${if (showInitialRows) "SHOW_INITIAL_ROWS = TRUE" else ""}"
+
     session
-      .sql(
-        s"CREATE ${if (withReplace) "OR REPLACE" else ""} STREAM $streamName ON TABLE $sourceTable ${if (showInitialRows) "SHOW_INITIAL_ROWS = TRUE" else ""}"
-      )
-      .count()
+      .sql(sql)
+      .show()
   }
 
   def executeInTransaction(transactionalOperation: TransactionalOperation)(
@@ -45,5 +76,41 @@ object SnowflakeUtils {
       }
     val enriched: Session => Unit = enableTransaction andThen exec
     enriched(session)
+  }
+
+  def createStage(stageName: String,
+                  orReplace: Boolean,
+                  ifNotExists: Boolean,
+                  directoryEnabled:Boolean = true)(implicit sessionManager: SessionManager): Unit = {
+    val session = sessionManager.get
+    val sql = s"CREATE " +
+      s" ${if (orReplace) " OR REPLACE " else ""}" +
+      s" STAGE " +
+      s" ${if (ifNotExists) " IF NOT EXISTS" else ""}" +
+      s" $stageName" +
+      s" directory = (enable = $directoryEnabled)"
+    session
+      .sql(sql)
+      .show()
+  }
+
+  def stageLocalPath(
+      stageName: String,
+      sourcePath: String,
+      destinationPath: String,
+      orReplace: Boolean,
+      ifNotExists: Boolean
+  )(implicit
+      sessionManager: SessionManager
+  ): Unit = {
+    val session = sessionManager.get
+    createStage(stageName, orReplace, ifNotExists)
+    session.file.put(
+      s"file://$sourcePath",
+      s"@$stageName${if (destinationPath.startsWith("/")) destinationPath
+      else "/" + destinationPath}",
+      Map("AUTO_COMPRESS" -> "FALSE")
+    )
+    session.sql(s"alter stage $stageName refresh").show()
   }
 }

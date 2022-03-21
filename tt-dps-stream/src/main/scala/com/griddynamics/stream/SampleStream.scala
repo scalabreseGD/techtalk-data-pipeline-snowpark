@@ -8,7 +8,7 @@ import com.snowflake.snowpark.{SaveMode, Session, TableFunction}
 object SampleStream {
 
   def createIndustryCodeStream()(implicit sessionManager:SessionManager): Unit = {
-    SnowflakeUtils.createStreamOnTable(
+    SnowflakeUtils.createStreamOnObjectType(
       pipelineConfigs
         .getOrElse("industry-code-stream", throw new Error("Stream not found")),
       pipelineConfigs

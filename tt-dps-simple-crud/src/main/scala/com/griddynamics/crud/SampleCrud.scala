@@ -3,14 +3,14 @@ package com.griddynamics.crud
 import com.griddynamics.common.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.Implicits.sessionManager
 import com.snowflake.snowpark.functions._
-import com.snowflake.snowpark.{SaveMode, TableFunction}
+import com.snowflake.snowpark.{MergeResult, SaveMode, TableFunction}
 
 object SampleCrud {
 
   def insertSampleIndustryCode(numRecord: Int): Unit = {
     val session = sessionManager.get
     session
-        .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
+      .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
       .write
       .mode(SaveMode.Overwrite)
       .saveAsTable(
@@ -63,7 +63,7 @@ object SampleCrud {
         pipelineConfigs
           .getOrElse("industry-code", throw new Error("Table not found"))
       )
-    target
+    val result: MergeResult = target
       .merge(
         sourceDf,
         substring(sourceDf("districtCode"), lit(0), lit(2))
@@ -75,6 +75,10 @@ object SampleCrud {
           .map(field => (field.name, sourceDf(field.name)))
           .toMap
       )
+      .whenMatched
+      .update(Map("sizeInSquareMeters" -> sourceDf("sizeInSquareMeters")))
+      .collect()
+    print(s"Rows Inserted ${result.rowsInserted} - Rows Updated ${result.rowsUpdated}" )
   }
 
 }

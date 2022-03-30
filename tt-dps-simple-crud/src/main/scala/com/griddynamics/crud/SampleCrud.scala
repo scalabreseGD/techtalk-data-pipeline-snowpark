@@ -76,7 +76,7 @@ object SampleCrud {
           .toMap
       )
       .whenMatched
-      .update(Map("sizeInSquareMeters" -> sourceDf("sizeInSquareMeters")))
+      .update(Map("sizeInSquareMeters" -> sourceDf("sizeInSquareMeters") * lit(2)))
       .collect()
     print(s"Rows Inserted ${result.rowsInserted} - Rows Updated ${result.rowsUpdated}" )
   }

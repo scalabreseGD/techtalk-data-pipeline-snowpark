@@ -1,0 +1,10 @@
+---
+version: '3'
+services:
+  jupyter:
+    image: almondsh/almond:0.10.9-scala-2.12.12
+    volumes:
+      - ../notebooks:/home/jovyan/work
+    ports:
+      - "8888:8888"
+

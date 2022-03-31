@@ -3,3 +3,4 @@
 /techtalk-data-pipeline-snowpark-pipeline1/target/
 .idea
 **/logs
+/notebooks/.ipynb_checkpoints/

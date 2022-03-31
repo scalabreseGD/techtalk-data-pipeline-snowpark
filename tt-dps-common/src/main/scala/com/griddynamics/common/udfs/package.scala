@@ -1,14 +1,10 @@
 package com.griddynamics.common
 
 import com.griddynamics.common.Types.{Employee, IndustryCode}
-import com.snowflake.snowpark.functions.{array_construct, callUDF, col, lit}
+import com.snowflake.snowpark.Row
 import com.snowflake.snowpark.types.StructType
 import com.snowflake.snowpark.udtf.UDTF1
-import com.snowflake.snowpark.{Row, Session, UserDefinedFunction}
 
-import java.net.URI
-import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest}
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Random
 

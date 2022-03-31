@@ -7,7 +7,7 @@ import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.Types.{Employee, IndustryCode}
 import com.griddynamics.pipeline.utils.HttpClientUtils
 import com.snowflake.snowpark.functions.{col, concat, lit, parse_json}
-import com.snowflake.snowpark.types.{DoubleType, StringType}
+import com.snowflake.snowpark.types.{DateType, DoubleType, StringType}
 import com.snowflake.snowpark.{DataFrame, SaveMode, Session}
 
 object Main {
@@ -75,7 +75,8 @@ object Main {
             "districtCodeFirst2"
           ) cast StringType as "districtCodeFirst2",
           col("VALUE")("name") cast StringType as "name",
-          col("VALUE")("surname") cast StringType as "surname"
+          col("VALUE")("surname") cast StringType as "surname",
+          col("VALUE")("dateOfBirth") cast DateType as "dateOfBirth"
         )
         .write
         .mode(SaveMode.Append)
@@ -113,23 +114,9 @@ object Main {
     fromEmployeeFileToEmployeeDf()
   }
 
-  def parseEmployeeStageStreamToEmployeeStream(): Unit = {
-    val session = sessionManager.get
-    val streamContent = session
-      .table(employeeStreamName)
-      .select(concat(lit(s"@$employeeStageName/"), col("relative_path")))
-      .cacheResult()
-    val filesToRead: Option[DataFrame] = streamContent
-      .collect()
-      .map(_.getString(0))
-      .map(session.read.json)
-      .reduceOption((first: DataFrame, second: DataFrame) => first union second)
-  }
-
   def main(args: Array[String]): Unit = {
     industryRestToIndustryTableStream()
     employeeRestToStageStream()
-    parseEmployeeStageStreamToEmployeeStream()
 
 //    val session = sessionManager.get
 //

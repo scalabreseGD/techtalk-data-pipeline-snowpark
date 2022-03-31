@@ -1,14 +1,13 @@
 package com.griddynamics.common
 
 import com.griddynamics.common.Types.{Employee, IndustryCode}
-import com.snowflake.snowpark.functions.{array_construct, callUDF, col, lit}
+import com.snowflake.snowpark.Row
 import com.snowflake.snowpark.types.StructType
 import com.snowflake.snowpark.udtf.UDTF1
-import com.snowflake.snowpark.{Row, Session, UserDefinedFunction}
 
-import java.net.URI
-import java.net.http.HttpResponse.BodyHandlers
-import java.net.http.{HttpClient, HttpRequest}
+import java.sql.Date
+import java.time.{LocalDate, ZoneId, ZoneOffset}
+import java.time.temporal.ChronoUnit.DAYS
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Random
 
@@ -27,6 +26,12 @@ package object udfs {
     )
   }
 
+  def randomDatesBetweenInterval(from: LocalDate, to: LocalDate):Date = {
+    val diff = DAYS.between(from, to)
+    val random = new Random()
+    val randDate = from.plusDays(random.nextInt(diff.toInt))
+    new Date(randDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli)
+  }
   def generateEmployees(numRecords: Int): Seq[Employee] = {
     val random = new Random()
     for {
@@ -34,7 +39,8 @@ package object udfs {
     } yield Employee(
       random.alphanumeric.take(5).mkString(""),
       random.alphanumeric.take(5).mkString(""),
-      random.alphanumeric.take(2).mkString("").toUpperCase
+      random.alphanumeric.take(2).mkString("").toUpperCase,
+      randomDatesBetweenInterval(LocalDate.of(1975,1,1), LocalDate.of(2005,1,1)).toString
     )
   }
 

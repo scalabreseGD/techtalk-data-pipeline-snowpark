@@ -1,7 +1,9 @@
 package com.griddynamics.common
 
 import com.snowflake.snowpark.Row
-import com.snowflake.snowpark.types.{DoubleType, StringType, StructField, StructType}
+import com.snowflake.snowpark.types._
+
+import java.sql.Date
 
 object Types {
 
@@ -35,8 +37,12 @@ object Types {
     )
   }
 
-  case class Employee(name: String, surname: String, districtCodeFirst2: String)
-      extends Rowable
+  case class Employee(
+      name: String,
+      surname: String,
+      districtCodeFirst2: String,
+      dateOfBirth: String
+  ) extends Rowable
   object Employee {
     def schema: StructType = StructType(
       StructField(
@@ -51,6 +57,11 @@ object Types {
       ),
       StructField(
         name = "districtCodeFirst2",
+        dataType = StringType,
+        nullable = true
+      ),
+      StructField(
+        name = "dateOfBirth",
         dataType = StringType,
         nullable = true
       )

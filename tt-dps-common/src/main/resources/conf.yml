@@ -21,5 +21,7 @@ servlets:
     basepath: "/generator"
     port: 8100
     endpoints:
-      generate-industries: "/getIndustries"
-      generate-employees: "/getEmployees"
+      generate-orders: "/getOrders"
+      generate-payments: "/getPayments"
+      generate-ratings: "/getRatings"
+      generate-restaurants: "/getRestaurants"

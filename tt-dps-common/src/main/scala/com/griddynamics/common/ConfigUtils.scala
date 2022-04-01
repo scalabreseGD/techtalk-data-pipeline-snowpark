@@ -2,7 +2,7 @@ package com.griddynamics.common
 
 import org.yaml.snakeyaml.Yaml
 
-import scala.collection.JavaConverters.mapAsScalaMap
+import scala.collection.JavaConverters._
 import scala.io.Source
 
 object ConfigUtils {
@@ -20,20 +20,26 @@ object ConfigUtils {
       .map(set =>
         set._2 match {
           case t: java.util.Map[String, Any] => (set._1, mapAsScala(t))
+          case t: java.util.Collection[Any] =>
+            (set._1, collectionAsScalaIterable(t).toList)
           case _                             => (set._1, set._2)
         }
       )
       .toMap
   }
 
-  val conf: Map[String, Any] = {
-    val buffer = Source.fromResource("conf.yml").bufferedReader()
+  def readYamlFromResource(path:String): Map[String, Any] = {
+    val buffer = Source.fromResource(path).bufferedReader()
     val root = mapAsScala(
       new Yaml()
         .load(buffer)
         .asInstanceOf[java.util.Map[String, Any]]
     )
     root
+  }
+
+  val conf: Map[String, Any] = {
+    readYamlFromResource("conf.yml")
   }
 
   val pipelineConfigs: Map[String, String] = conf

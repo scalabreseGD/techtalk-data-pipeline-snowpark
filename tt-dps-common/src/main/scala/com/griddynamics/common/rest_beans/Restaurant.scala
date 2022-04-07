@@ -1,6 +1,13 @@
 package com.griddynamics.common.rest_beans
 
-import com.snowflake.snowpark.types.{ArrayType, DataType, DoubleType, StringType, StructField, StructType}
+import com.snowflake.snowpark.types.{
+  ArrayType,
+  DataType,
+  DoubleType,
+  StringType,
+  StructField,
+  StructType
+}
 
 case class Restaurant(
     restaurantCode: String,

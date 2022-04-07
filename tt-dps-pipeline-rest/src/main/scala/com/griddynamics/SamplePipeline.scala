@@ -39,8 +39,7 @@ class SamplePipeline {
     val path = HttpClientUtils.performGetAndWrite(
       restUrl,
       params = restParams,
-      localFile,
-      isTemp = true
+      localFile
     )
     SnowflakeUtils.stageLocalPath(
       stageName,
@@ -71,7 +70,7 @@ class SamplePipeline {
       val df = s.read.json(s"@$restaurantStageName/$localFile")
       val extracted: DataFrame = df
         .select(parse_json(col("*")).as("exploded"))
-        .jsonArrayToExplodedFields(Restaurant.schema, "exploded")
+        .jsonArrayToExplodedFields(Restaurant.schema,"exploded")
       extracted.write.mode(SaveMode.Overwrite).saveAsTable(restaurantTableName)
     })
   }
@@ -90,18 +89,19 @@ class SamplePipeline {
       orReplace = false,
       ifNotExists = true
     )
-    stageRestCallToLocal(
-      paymentStageName,
-      paymentUrl,
-      Map("numRecords" -> 10),
-      paymentStageLocalPath
-    )
 
     SnowflakeUtils.createStreamOnObjectType(
       paymentStreamName,
       paymentStageName,
       ifNotExists = true,
       sourceObjectType = StreamSourceMode.Stage
+    )
+
+    stageRestCallToLocal(
+      paymentStageName,
+      paymentUrl,
+      Map("numRecords" -> 10),
+      paymentStageLocalPath
     )
 
     val fileToReadFromStream: Array[String] = session
@@ -129,6 +129,6 @@ object SamplePipeline extends App {
 
   val instance = new SamplePipeline()
 
-  instance.ingestAndOverwriteRestaurantWithStage()
+//  instance.ingestAndOverwriteRestaurantWithStage()
   instance.ingestPaymentsStreamFromStage()
 }

@@ -1,6 +1,6 @@
 package com.griddynamics.common.rest_beans
 
-import com.snowflake.snowpark.types.{DoubleType, StringType, StructField, StructType}
+import com.snowflake.snowpark.types.{ArrayType, DataType, DoubleType, StringType, StructField, StructType}
 
 case class Restaurant(
     restaurantCode: String,
@@ -58,8 +58,8 @@ object Restaurant extends Generator[Restaurant] with SnowparkStruct {
     randomIntInRange(capacityRange._1, capacityRange._2)
   )
 
-  override def schema: StructType = {
-    StructType(
+  override def schema: ArrayType = {
+    ArrayType(StructType(
       StructField(
         name = "restaurantCode",
         dataType = StringType,
@@ -75,6 +75,6 @@ object Restaurant extends Generator[Restaurant] with SnowparkStruct {
         dataType = DoubleType,
         nullable = true
       )
-    )
+    ))
   }
 }

@@ -4,11 +4,12 @@ import com.griddynamics.common.Implicits.sessionManager
 import com.griddynamics.common.SnowflakeUtils
 import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
-import com.griddynamics.common.rest_beans.Restaurant
+import com.griddynamics.common.rest_beans.{Payment, Restaurant}
 import com.griddynamics.pipeline.utils.HttpClientUtils
 import com.snowflake.snowpark.{DataFrame, SaveMode}
 import com.snowflake.snowpark.functions.{col, concat, lit, parse_json}
 import com.snowflake.snowpark.types.{DoubleType, IntegerType, StringType}
+import com.snowflake.snowpark.Implicits.WithCastDataFrame
 
 class SamplePipeline {
   private val session = sessionManager.get
@@ -66,21 +67,13 @@ class SamplePipeline {
       restaurantStageLocalPath
     )
 
-    SnowflakeUtils.executeInTransaction(
-      s => {
-        val df = s.read.json(s"@$restaurantStageName/$localFile")
-        val extracted = df
-          .select(parse_json(col("*")).as("exploded"))
-          .flatten(col("exploded"))
-          .select(col("VALUE"))
-          .select(
-            col("VALUE")("peopleCapacity") cast IntegerType as "peopleCapacity",
-            col("VALUE")("restaurantCode") cast StringType as "restaurantCode",
-            col("VALUE")("restaurantName") cast StringType as "restaurantName"
-          )
-        extracted.write.mode(SaveMode.Overwrite).saveAsTable(restaurantTableName)
-      }
-    )
+    SnowflakeUtils.executeInTransaction(s => {
+      val df = s.read.json(s"@$restaurantStageName/$localFile")
+      val extracted: DataFrame = df
+        .select(parse_json(col("*")).as("exploded"))
+        .jsonArrayToExplodedFields(Restaurant.schema, "exploded")
+      extracted.write.mode(SaveMode.Overwrite).saveAsTable(restaurantTableName)
+    })
   }
 
   def ingestPaymentsStreamFromStage(): Unit = {
@@ -119,21 +112,14 @@ class SamplePipeline {
 
     val jsonFileExplodedDF: Option[DataFrame] = fileToReadFromStream
       .map(session.read.json)
-      .map(df =>
-        df.select(parse_json(col("*")).as("full"))
-          .flatten(col("full"))
-          .select(
-            col("value")("paymentCode") cast StringType as "paymentCode",
-            col("value")("paymentType") cast StringType as "paymentType",
-            col("value")("paymentDate") cast StringType as "paymentDate",
-            col("value")("orderCode") cast StringType as "orderCode",
-            col("value")("amount") cast DoubleType as "amount"
-          )
-      )
       .reduceOption((first: DataFrame, second: DataFrame) => first union second)
 
     jsonFileExplodedDF.foreach(
-      _.write.mode(SaveMode.Append).saveAsTable(paymentsTableName)
+      _.select(parse_json(col("*")).as("full"))
+        .jsonArrayToExplodedFields(Payment.schema, "full")
+        .write
+        .mode(SaveMode.Append)
+        .saveAsTable(paymentsTableName)
     )
 
   }
@@ -144,5 +130,5 @@ object SamplePipeline extends App {
   val instance = new SamplePipeline()
 
   instance.ingestAndOverwriteRestaurantWithStage()
-//  instance.ingestPaymentsStreamFromStage()
+  instance.ingestPaymentsStreamFromStage()
 }

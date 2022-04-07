@@ -1,55 +1,46 @@
 package com.griddynamics.stream
 
-import com.griddynamics.common.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.snowflake.snowpark.functions.{col, lit, substring, upper}
 import com.snowflake.snowpark.{SaveMode, Session, TableFunction}
 
 object SampleStream {
 
-  def createIndustryCodeStream()(implicit sessionManager:SessionManager): Unit = {
+  def createIndustryCodeStream()(implicit
+      sessionManager: SessionManager
+  ): Unit = {
     SnowflakeUtils.createStreamOnObjectType(
-      pipelineConfigs
-        .getOrElse("industry-code-stream", throw new Error("Stream not found")),
-      pipelineConfigs
-        .getOrElse("industry-code", throw new Error("Stream not found")),
+      "INDUSTRY_CODE_STREAM",
+      "INDUSTRY_CODE",
       withReplace = true
     )
   }
 
-  def generateRecordsIntoIndustryCode(numRecord: Int)(implicit sessionManager:SessionManager): Unit = {
+  def generateRecordsIntoIndustryCode(
+      numRecord: Int
+  )(implicit sessionManager: SessionManager): Unit = {
     val session = sessionManager.get
     session
       .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
       .write
       .mode(SaveMode.Append)
-      .saveAsTable(
-        pipelineConfigs.getOrElse(
-          "industry-code",
-          throw new Error("Stream not found")
-        )
-      )
+      .saveAsTable("INDUSTRY_CODE")
   }
 
-  def generateRecordsIntoEmployeeCode(numRecord: Int)(implicit sessionManager:SessionManager): Unit = {
+  def generateRecordsIntoEmployeeCode(
+      numRecord: Int
+  )(implicit sessionManager: SessionManager): Unit = {
     val session = sessionManager.get
     session
       .tableFunction(TableFunction("GENERATE_EMPLOYEES"), lit(numRecord))
       .write
       .mode(SaveMode.Overwrite)
-      .saveAsTable(
-        pipelineConfigs.getOrElse(
-          "employee-code",
-          throw new Error("Stream not found")
-        )
-      )
+      .saveAsTable("EMPLOYEE")
   }
 
-  def cleanWriteStreamToTableIndustryCodeFirst2(session:Session): Unit = {
-    val industryCodeStreamName = pipelineConfigs
-      .getOrElse("industry-code-stream", throw new Error("Stream not found"))
-    val industryCodeNameFirst2 = pipelineConfigs
-      .getOrElse("industry-code-first2", throw new Error("Table not found"))
+  def cleanWriteStreamToTableIndustryCodeFirst2(session: Session): Unit = {
+    val industryCodeStreamName = "INDUSTRY_CODE_STREAM"
+    val industryCodeNameFirst2 = "INDUSTRY_CODE_FIRST2"
     session.table(industryCodeNameFirst2).delete()
     val industryCodeStreamDf = session.table(industryCodeStreamName)
     industryCodeStreamDf
@@ -68,19 +59,10 @@ object SampleStream {
       .saveAsTable(industryCodeNameFirst2)
   }
 
-  def industryStreamEmployee(session:Session): Unit = {
-    val employeeTableName = pipelineConfigs.getOrElse(
-      "employee-code",
-      throw new Error("Table not found")
-    )
-    val industryCodeStreamName = pipelineConfigs.getOrElse(
-      "industry-code-stream",
-      throw new Error("Stream not found")
-    )
-    val destinationEmployeeIndustry = pipelineConfigs.getOrElse(
-      "industry-employee",
-      throw new Error("Table not found")
-    )
+  def industryStreamEmployee(session: Session): Unit = {
+    val employeeTableName = "EMPLOYEE"
+    val industryCodeStreamName = "EMPLOYEE_STREAM"
+    val destinationEmployeeIndustry = "EMPLOYEE_INDUSTRY"
 
     val employeeDf = session.table(employeeTableName)
     val industryCodeStreamDf = session.table(industryCodeStreamName)

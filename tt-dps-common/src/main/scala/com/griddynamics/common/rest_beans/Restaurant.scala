@@ -1,13 +1,13 @@
-package com.griddynamics.rest.services
+package com.griddynamics.common.rest_beans
 
-import scala.util.Random
+import com.snowflake.snowpark.types.{DoubleType, StringType, StructField, StructType}
 
 case class Restaurant(
     restaurantCode: String,
     restaurantName: String,
     peopleCapacity: Int
 )
-object Restaurant extends Generator[Restaurant] {
+object Restaurant extends Generator[Restaurant] with SnowparkStruct {
 
   override def configsKey = "restaurant"
 
@@ -41,7 +41,7 @@ object Restaurant extends Generator[Restaurant] {
     )
     .getOrElse(throw new Error())
 
-  private[services] def generateRestaurantCode(): String = {
+  private[rest_beans] def generateRestaurantCode(): String = {
     val codeFirstTwo = codeIntervalChars(
       random.nextInt(codeIntervalChars.length)
     )
@@ -57,4 +57,24 @@ object Restaurant extends Generator[Restaurant] {
     random.alphanumeric.take(10).mkString,
     randomIntInRange(capacityRange._1, capacityRange._2)
   )
+
+  override def schema: StructType = {
+    StructType(
+      StructField(
+        name = "restaurantCode",
+        dataType = StringType,
+        nullable = true
+      ),
+      StructField(
+        name = "restaurantName",
+        dataType = StringType,
+        nullable = true
+      ),
+      StructField(
+        name = "peopleCapacity",
+        dataType = DoubleType,
+        nullable = true
+      )
+    )
+  }
 }

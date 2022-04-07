@@ -1,6 +1,6 @@
 package com.griddynamics.common
 
-import com.griddynamics.common.ConfigUtils.snowflakeConnectionProperties
+import com.griddynamics.common.configs.ConfigUtils.snowflakeConnectionProperties
 
 object Implicits {
   implicit lazy val sessionManager: SessionManager = SessionManager(

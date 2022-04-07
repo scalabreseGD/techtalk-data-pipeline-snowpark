@@ -1,6 +1,4 @@
-package com.griddynamics.rest.services
-
-import scala.math.BigDecimal.RoundingMode
+package com.griddynamics.common.rest_beans
 
 case class Order(
     orderCode: String,
@@ -40,7 +38,7 @@ object Order extends Generator[Order] {
     )
     .getOrElse(throw new Error())
 
-  private[services] def generateOrderCode(): String = {
+  private[rest_beans] def generateOrderCode(): String = {
     val codeFirstTwo = codeIntervalChars(
       random.nextInt(codeIntervalChars.length)
     )

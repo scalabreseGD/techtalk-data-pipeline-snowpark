@@ -59,7 +59,8 @@ object HttpClientUtils {
   def performGetAndWrite(
       url: String,
       params: Map[String, Any],
-      filePath: String
+      filePath: String,
+      isTemp: Boolean = false
   ): String = {
     val result: String = performGetJson(url, params)
     val path = Paths.get(filePath).toAbsolutePath
@@ -71,6 +72,7 @@ object HttpClientUtils {
       StandardOpenOption.WRITE,
       StandardOpenOption.APPEND
     )
+    if (isTemp) path.toFile.deleteOnExit()
     path.toString
   }
 }

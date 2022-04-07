@@ -1,4 +1,4 @@
-package com.griddynamics.rest.services
+package com.griddynamics.common.rest_beans
 
 import java.time.LocalDate
 import java.util.UUID

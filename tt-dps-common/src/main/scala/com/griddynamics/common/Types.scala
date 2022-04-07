@@ -3,8 +3,6 @@ package com.griddynamics.common
 import com.snowflake.snowpark.Row
 import com.snowflake.snowpark.types._
 
-import java.sql.Date
-
 object Types {
 
   trait Rowable extends Product {

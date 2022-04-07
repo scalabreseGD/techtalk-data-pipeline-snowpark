@@ -1,19 +1,12 @@
-package com.griddynamics.common
+package com.griddynamics.common.configs
 
+import com.griddynamics.common.configs.Beans.{Pipeline, Pipelines, Servlet, Servlets}
 import org.yaml.snakeyaml.Yaml
 
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.{collectionAsScalaIterable, mapAsScalaMap}
 import scala.io.Source
 
 object ConfigUtils {
-
-  case class Servlet(
-      baseUrl: String,
-      basePath: String,
-      port: Int,
-      endpoints: Map[String, String]
-  )
-  case class Servlets(generator: Servlet)
 
   private def mapAsScala(map: java.util.Map[String, Any]): Map[String, Any] = {
     mapAsScalaMap(map)
@@ -22,13 +15,13 @@ object ConfigUtils {
           case t: java.util.Map[String, Any] => (set._1, mapAsScala(t))
           case t: java.util.Collection[Any] =>
             (set._1, collectionAsScalaIterable(t).toList)
-          case _                             => (set._1, set._2)
+          case _ => (set._1, set._2)
         }
       )
       .toMap
   }
 
-  def readYamlFromResource(path:String): Map[String, Any] = {
+  def readYamlFromResource(path: String): Map[String, Any] = {
     val buffer = Source.fromResource(path).bufferedReader()
     val root = mapAsScala(
       new Yaml()
@@ -42,10 +35,20 @@ object ConfigUtils {
     readYamlFromResource("conf.yml")
   }
 
-  val pipelineConfigs: Map[String, String] = conf
-    .get("pipeline")
+  val pipelineConfigs: Pipelines = conf
+    .get("pipelines")
+    .map(_.asInstanceOf[Map[String, Any]])
+    .flatMap(_.get("demo"))
     .map(_.asInstanceOf[Map[String, Map[String, String]]])
-    .flatMap(_.get("tables"))
+    .map(demo => {
+      val tables =
+        demo.getOrElse("tables", throw new Error("Demo not defined correctly"))
+      val streams =
+        demo.getOrElse("streams", throw new Error("Demo not defined correctly"))
+      val stages =
+        demo.getOrElse("stages", throw new Error("Demo not defined correctly"))
+      Pipelines(Pipeline(tables, streams, stages))
+    })
     .getOrElse(throw new Error("Pipeline not defined correctly"))
 
   val servlets: Servlets = {

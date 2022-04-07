@@ -1,6 +1,6 @@
 package com.griddynamics.rest
 
-import com.griddynamics.common.ConfigUtils.servlets
+import com.griddynamics.common.configs.ConfigUtils.servlets
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.webapp.WebAppContext
 import org.scalatra.servlet.ScalatraListener

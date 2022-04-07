@@ -1,6 +1,5 @@
 package com.griddynamics.crud
 
-import com.griddynamics.common.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.Implicits.sessionManager
 import com.snowflake.snowpark.functions._
 import com.snowflake.snowpark.{MergeResult, SaveMode, TableFunction}
@@ -13,37 +12,23 @@ object SampleCrud {
       .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
       .write
       .mode(SaveMode.Overwrite)
-      .saveAsTable(
-        pipelineConfigs.getOrElse(
-          "industry-code",
-          throw new Error("Table not found")
-        )
-      )
+      .saveAsTable("INDUSTRY_CODE")
 
     session
-      .table(
-        pipelineConfigs
-          .getOrElse("industry-code", throw new Error("Table not found"))
-      )
+      .table("INDUSTRY_CODE")
       .where(
         contains(col("districtCode"), lit("L"))
           .or(contains(col("districtCode"), lit("D")))
       )
       .write
       .mode(SaveMode.Overwrite)
-      .saveAsTable(
-        pipelineConfigs
-          .getOrElse("industry-code-l-or-d", throw new Error("Table not found"))
-      )
+      .saveAsTable("INDUSTRY_CODE_L_OR_D")
   }
 
   def performUpdate(): Unit = {
     val session = sessionManager.get
     session
-      .table(
-        pipelineConfigs
-          .getOrElse("industry-code-l-or-d", throw new Error("Table not found"))
-      )
+      .table("INDUSTRY_CODE_L_OR_D")
       .update(
         assignments =
           Map("sizeInSquareMeters" -> col("sizeInSquareMeters") * lit(1000)),
@@ -59,10 +44,7 @@ object SampleCrud {
     )
 
     val target = session
-      .table(
-        pipelineConfigs
-          .getOrElse("industry-code", throw new Error("Table not found"))
-      )
+      .table("INDUSTRY_CODE")
     val result: MergeResult = target
       .merge(
         sourceDf,
@@ -78,7 +60,9 @@ object SampleCrud {
       .whenMatched
       .update(Map("sizeInSquareMeters" -> sourceDf("sizeInSquareMeters")))
       .collect()
-    print(s"Rows Inserted ${result.rowsInserted} - Rows Updated ${result.rowsUpdated}" )
+    print(
+      s"Rows Inserted ${result.rowsInserted} - Rows Updated ${result.rowsUpdated}"
+    )
   }
 
 }

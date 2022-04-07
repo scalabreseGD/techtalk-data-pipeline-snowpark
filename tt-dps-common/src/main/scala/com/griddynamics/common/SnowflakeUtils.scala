@@ -53,8 +53,9 @@ object SnowflakeUtils {
 
     val sql = s"CREATE " +
       s" ${if (withReplace) "OR REPLACE" else ""}" +
-      s" STREAM $streamName " +
+      s" STREAM " +
       s" ${if(ifNotExists) "IF NOT EXISTS" else ""}" +
+      s" $streamName " +
       s" ON ${sourceObjectType.objectType} $sourceObjectName ${if (showInitialRows) "SHOW_INITIAL_ROWS = TRUE" else ""}"
 
     session

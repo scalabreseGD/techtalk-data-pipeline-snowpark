@@ -1,7 +1,7 @@
-package com.griddynamics.rest.services
+package com.griddynamics.common.rest_beans
 
-import com.griddynamics.common.{ConfigUtils, udfs}
-import com.griddynamics.rest.services.Order.random
+import com.griddynamics.common.configs.ConfigUtils
+import com.griddynamics.common.udfs
 
 import java.sql.Date
 import java.time.LocalDate

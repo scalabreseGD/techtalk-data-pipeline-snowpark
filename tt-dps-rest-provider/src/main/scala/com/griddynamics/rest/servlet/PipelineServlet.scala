@@ -1,9 +1,7 @@
 package com.griddynamics.rest.servlet
 
-import com.griddynamics.common.ConfigUtils.servlets
-import com.griddynamics.common.udfs.generateEmployees
-import com.griddynamics.rest.services.{Order, Payment, Rating, Restaurant}
-import org.json4s.jackson.Serialization.write
+import com.griddynamics.common.configs.ConfigUtils.servlets
+import com.griddynamics.common.rest_beans._
 import org.scalatra.ActionResult
 
 class PipelineServlet extends BaseServlet {

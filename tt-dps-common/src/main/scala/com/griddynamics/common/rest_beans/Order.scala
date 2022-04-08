@@ -47,7 +47,7 @@ object Order extends Generator[Order] {
     s"$codeFirstTwo$numberSequence"
   }
 
-  private def generateCustomerEmail(): String = {
+  private[rest_beans] def generateCustomerEmail(): String = {
     s"${random.alphanumeric.take(emailConfs._1).mkString}@${random.alphanumeric.take(emailConfs._2).mkString}.test"
   }
   override def generate(length: Int): Seq[Order] = for {

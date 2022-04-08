@@ -1,5 +1,7 @@
 package com.griddynamics.common.rest_beans
 
+import com.snowflake.snowpark.types.{ArrayType, DataType, DoubleType, IntegerType, StringType, StructField, StructType}
+
 import java.time.LocalDate
 
 case class Rating(
@@ -9,7 +11,7 @@ case class Rating(
     customerEmail: String = null
 )
 
-object Rating extends Generator[Rating] {
+object Rating extends Generator[Rating] with SnowparkStruct {
   override def configsKey: String = "ratings"
 
   private val ratingInPercentage: (Int, Int) = confs
@@ -31,6 +33,29 @@ object Rating extends Generator[Rating] {
       LocalDate.of(1975, 1, 1),
       LocalDate.now()
     ).toString,
-    null
+    Order.generateCustomerEmail()
   )
+
+  override def schema: ArrayType = ArrayType(StructType(
+    StructField(
+      name = "restaurantCode",
+      dataType = StringType,
+      nullable = true
+    ),
+    StructField(
+      name = "ratingInPercentage",
+      dataType = IntegerType,
+      nullable = true
+    ),
+    StructField(
+      name = "dateOfRate",
+      dataType = StringType,
+      nullable = true
+    ),
+    StructField(
+      name = "customerEmail",
+      dataType = StringType,
+      nullable = true
+    )
+  ))
 }

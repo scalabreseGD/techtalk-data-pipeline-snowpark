@@ -1,7 +1,19 @@
 package com.snowflake.snowpark
 
-import com.snowflake.snowpark.functions.{col, get_ignore_case, lit, parse_json, to_object}
-import com.snowflake.snowpark.types.{ArrayType, AtomicType, StructField, StructType}
+import com.snowflake.snowpark.functions.{
+  col,
+  get_ignore_case,
+  lit,
+  parse_json,
+  to_object
+}
+import com.snowflake.snowpark.internal.analyzer.SnowflakePlan
+import com.snowflake.snowpark.types.{
+  ArrayType,
+  AtomicType,
+  StructField,
+  StructType
+}
 
 object Implicits {
   implicit class WithCastDataFrame(df: DataFrame) {
@@ -10,7 +22,7 @@ object Implicits {
         columnName: String = "$1"
     ): DataFrame = {
 
-     def getFieldAsColumn(field: StructField): Column = {
+      def getFieldAsColumn(field: StructField): Column = {
         get_ignore_case(
           col(columnName),
           lit(field.name)

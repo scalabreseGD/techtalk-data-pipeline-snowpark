@@ -6,7 +6,10 @@ import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
 import com.griddynamics.common.rest_beans.{Payment, Rating, Restaurant}
 import com.griddynamics.pipeline.utils.HttpClientUtils
-import com.snowflake.snowpark.Implicits.WithCastDataFrame
+import com.snowflake.snowpark.Implicits.{
+  WithCastDataFrame,
+  EmptyDataframeSession
+}
 import com.snowflake.snowpark.functions.{col, concat, lit, parse_json}
 import com.snowflake.snowpark.types.{StringType, StructField, StructType}
 import com.snowflake.snowpark.{DataFrame, Row, SaveMode}
@@ -168,52 +171,54 @@ class SamplePipeline {
     )
     SnowflakeUtils.waitStreamsRefresh()
 
-    val flattenRatingJson: DataFrame = session
-      .table(ratingRawStreamName)
-      .jsonArrayToExplodedFields(Rating.schema, "response")
-    Try {
-      val df = session.table(ratingsTableName)
-      df.count()
-      df
-    } match {
-      case Success(destination) =>
-        val mergeResult = destination
-          .merge(
-            flattenRatingJson,
-            (destination("customerEmail") === flattenRatingJson(
-              "customerEmail"
-            )) and (destination("restaurantCode") === flattenRatingJson(
-              "restaurantCode"
-            ))
-          )
-          .whenMatched
-          .update(
-            Map(
-              destination("ratingInPercentage") -> flattenRatingJson(
-                "ratingInPercentage"
-              ),
-              destination("dateOfRate") -> flattenRatingJson(
-                "dateOfRate"
+    SnowflakeUtils.executeInTransaction(snowflakeSession => {
+      val flattenRatingJson: DataFrame = snowflakeSession
+        .table(ratingRawStreamName)
+        .jsonArrayToExplodedFields(Rating.schema, "response")
+      Try {
+        val df = snowflakeSession.table(ratingsTableName)
+        df.count()
+        df
+      } match {
+        case Success(destination) =>
+          val mergeResult = destination
+            .merge(
+              flattenRatingJson,
+              (destination("customerEmail") === flattenRatingJson(
+                "customerEmail"
+              )) and (destination("restaurantCode") === flattenRatingJson(
+                "restaurantCode"
+              ))
+            )
+            .whenMatched
+            .update(
+              Map(
+                destination("ratingInPercentage") -> flattenRatingJson(
+                  "ratingInPercentage"
+                ),
+                destination("dateOfRate") -> flattenRatingJson(
+                  "dateOfRate"
+                )
               )
             )
+            .whenNotMatched
+            .insert(
+              destination.schema.fields
+                .map(field =>
+                  (destination(field.name), flattenRatingJson(field.name))
+                )
+                .toMap
+            )
+            .collect()
+          println(
+            s"\nROW INSERTED = ${mergeResult.rowsInserted} | ROW UPDATED = ${mergeResult.rowsUpdated}\n"
           )
-          .whenNotMatched
-          .insert(
-            destination.schema.fields
-              .map(field =>
-                (destination(field.name), flattenRatingJson(field.name))
-              )
-              .toMap
-          )
-          .collect()
-        println(
-          s"\nROW INSERTED = ${mergeResult.rowsInserted} | ROW UPDATED = ${mergeResult.rowsUpdated}\n"
-        )
-      case Failure(_) =>
-        flattenRatingJson.write
-          .mode(SaveMode.Overwrite)
-          .saveAsTable(ratingsTableName)
-    }
+        case Failure(_) =>
+          flattenRatingJson.write
+            .mode(SaveMode.Overwrite)
+            .saveAsTable(ratingsTableName)
+      }
+    })
   }
 }
 
@@ -223,5 +228,5 @@ object SamplePipeline extends App {
 
 //  instance.ingestAndOverwriteRestaurantWithStage()
 //  instance.ingestPaymentsStreamFromStage()
-  instance.ingestRatingsFromRawToFlat()
+//  instance.ingestRatingsFromRawToFlat()
 }

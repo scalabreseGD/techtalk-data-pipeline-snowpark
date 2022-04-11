@@ -94,7 +94,7 @@ class SamplePipeline {
     })
   }
 
-  def ingestPaymentsStreamFromStage(numRecords:Int): Unit = {
+  def ingestPaymentsStreamFromStage(numRecords: Int): Unit = {
     val paymentStageName = pipelineConfigs.demo.stages.get("payment").orNull
     val paymentStageStreamName =
       pipelineConfigs.demo.streams.get("payment_stage").orNull
@@ -235,7 +235,7 @@ class SamplePipeline {
     })
   }
 
-  def ingestOrdersFromRawToFlat(numRecords:Int): Unit = {
+  def ingestOrdersFromRawToFlat(numRecords: Int): Unit = {
     val orderUrl =
       s"${servlets.generator.baseUrl}:${servlets.generator.port}${servlets.generator.basePath}${servlets.generator.endpoints
         .getOrElse("generate-orders", throw new Error("Endpoint missing"))}/{{numRecords}}"
@@ -331,20 +331,22 @@ class SamplePipeline {
 
     SnowflakeUtils.waitStreamsRefresh()
 
-    val orderStreamDf = session.table(orderStreamName)
-    val paymentStreamDf = session.table(paymentStreamName)
+    SnowflakeUtils.executeInTransaction(snowflakeSession => {
+      val orderStreamDf = snowflakeSession.table(orderStreamName)
+      val paymentStreamDf = snowflakeSession.table(paymentStreamName)
 
-    val totPaidForEachOrder = paymentStreamDf
-      .groupBy(col("orderCode"))
-      .agg(sum(col("amount")).as("totPaid"))
-    orderStreamDf
-      .select(col("orderCode"), col("totPrice"))
-      .join(totPaidForEachOrder, usingColumn = "orderCode")
-      .where(col("totPaid") gt col("totPrice"))
-      .select("orderCode","totPrice","totPaid")
-      .write
-      .mode(SaveMode.Append)
-      .saveAsTable(dqPaymentMoreThanOrderTableName)
+      val totPaidForEachOrder = paymentStreamDf
+        .groupBy(col("orderCode"))
+        .agg(sum(col("amount")).as("totPaid"))
+      orderStreamDf
+        .select(col("orderCode"), col("totPrice"))
+        .join(totPaidForEachOrder, usingColumn = "orderCode")
+        .where(col("totPaid") gt col("totPrice"))
+        .select("orderCode", "totPrice", "totPaid")
+        .write
+        .mode(SaveMode.Append)
+        .saveAsTable(dqPaymentMoreThanOrderTableName)
+    })
   }
 
 }

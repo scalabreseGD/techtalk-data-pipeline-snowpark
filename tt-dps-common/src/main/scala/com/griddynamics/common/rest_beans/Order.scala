@@ -1,4 +1,5 @@
 package com.griddynamics.common.rest_beans
+import com.snowflake.snowpark.types.{ArrayType, DataType, DoubleType, IntegerType, StringType, StructField, StructType}
 
 case class Order(
     orderCode: String,
@@ -6,7 +7,7 @@ case class Order(
     totPrice: Double,
     restaurantCode: String
 )
-object Order extends Generator[Order] {
+object Order extends Generator[Order] with SnowparkStruct {
   private val codeIntervalChars: List[String] = confs
     .get("code-interval")
     .map(_.asInstanceOf[Map[String, Any]])
@@ -60,4 +61,27 @@ object Order extends Generator[Order] {
   )
 
   override def configsKey: String = "orders"
+
+  override def schema: ArrayType = ArrayType(StructType(
+    StructField(
+      name = "orderCode",
+      dataType = StringType,
+      nullable = true
+    ),
+    StructField(
+      name = "customerEmail",
+      dataType = StringType,
+      nullable = true
+    ),
+    StructField(
+      name = "totPrice",
+      dataType = DoubleType,
+      nullable = true
+    ),
+    StructField(
+      name = "restaurantCode",
+      dataType = StringType,
+      nullable = true
+    )
+  ))
 }

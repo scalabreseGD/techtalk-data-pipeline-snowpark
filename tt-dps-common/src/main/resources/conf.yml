@@ -8,16 +8,19 @@ snowflake-schema: "DEMO"
 pipelines:
   demo:
     tables:
-      restaurant: "RESTAURANT"
-      rating_raw: "RATING_RAW"
-      rating: "RATING"
-      order_raw: "ORDER_RAW"
-      order: "ORDER"
-      payment: "PAYMENT"
+      restaurant: "DIM_RESTAURANT"
+      rating_raw: "TRAN_RATING_RAW"
+      rating: "TRAN_RATING"
+      order_raw: "TRAN_ORDER_RAW"
+      order: "TRAN_ORDER"
+      payment: "TRAN_PAYMENT"
+      dq_payment_more_than_order: "DQ_PAYMENT_MT_ORDER"
     streams:
-      rating_raw: "RATING_RAW_STREAM"
-      order_raw: "ORDER_RAW_STREAM"
-      payment: "PAYMENT_STREAM"
+      rating_raw: "TRAN_RATING_RAW_STREAM"
+      order_raw: "TRAN_ORDER_RAW_STREAM"
+      payment_stage: "PAYMENT_STAGE_STREAM"
+      payment: "TRAN_PAYMENT_STREAM"
+      order: "TRAN_ORDER_STREAM"
     stages:
       restaurant: "RESTAURANT_STAGE"
       restaurant_local_path: "ingest/restaurant"

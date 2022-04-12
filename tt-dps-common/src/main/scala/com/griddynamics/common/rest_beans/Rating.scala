@@ -30,7 +30,7 @@ object Rating extends Generator[Rating] with SnowparkStruct {
     Restaurant.generateRestaurantCode(),
     randomIntInRange(ratingInPercentage._1, ratingInPercentage._2),
     randomDatesBetweenInterval(
-      LocalDate.of(1975, 1, 1),
+      LocalDate.of(2000, 1, 1),
       LocalDate.now()
     ).toString,
     Order.generateCustomerEmail()

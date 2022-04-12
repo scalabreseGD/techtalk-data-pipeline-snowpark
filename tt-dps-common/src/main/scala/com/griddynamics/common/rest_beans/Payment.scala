@@ -26,7 +26,7 @@ object Payment extends Generator[Payment] with SnowparkStruct {
       random.nextInt(paymentTypes.length)
     ),
     randomDatesBetweenInterval(
-      LocalDate.of(1970, 1, 1),
+      LocalDate.of(2000, 1, 1),
       LocalDate.now()
     ).toString,
     Order.generateOrderCode(),

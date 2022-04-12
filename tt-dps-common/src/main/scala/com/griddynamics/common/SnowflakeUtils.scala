@@ -115,5 +115,5 @@ object SnowflakeUtils {
     session.sql(s"alter stage $stageName refresh").show()
   }
 
-  def waitStreamsRefresh(): Unit = Thread.sleep(3000) // Wait until the stream got refreshed
+  def waitStreamsRefresh(timeout:Long=3000): Unit = Thread.sleep(timeout) // Wait until the stream got refreshed
 }

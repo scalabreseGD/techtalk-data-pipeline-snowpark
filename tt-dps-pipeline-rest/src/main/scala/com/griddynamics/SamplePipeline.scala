@@ -7,19 +7,9 @@ import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
 import com.griddynamics.common.rest_beans.{Order, Payment, Rating, Restaurant}
 import com.griddynamics.pipeline.utils.HttpClientUtils
 import com.snowflake.snowpark.Implicits.WithCastDataFrame
-import com.snowflake.snowpark.functions.{col, concat, lit, parse_json, sum}
+import com.snowflake.snowpark.functions._
 import com.snowflake.snowpark.types.{StringType, StructField, StructType}
-import com.snowflake.snowpark.{
-  Column,
-  DataFrame,
-  MatchedClauseBuilder,
-  MergeBuilder,
-  MergeResult,
-  NotMatchedClauseBuilder,
-  Row,
-  SaveMode,
-  Session
-}
+import com.snowflake.snowpark.{DataFrame, Row, SaveMode}
 
 import scala.util.{Failure, Success, Try}
 
@@ -35,6 +25,10 @@ class SamplePipeline {
     pipelineConfigs.demo.tables.get("order").orNull
   private val dqPaymentMoreThanOrderTableName =
     pipelineConfigs.demo.tables.get("dq_payment_more_than_order").orNull
+  private val amexRatingGt50TableName =
+    pipelineConfigs.demo.tables.get("amex_rating_gt_50").orNull
+  private val bestRatingRestaurant30days =
+    pipelineConfigs.demo.tables.get("best_rating_restaurant_30days").orNull
 
   /** @param stageName stageName to create and/or to use
     * @param restUrl rest url to invoke
@@ -124,7 +118,7 @@ class SamplePipeline {
       paymentStageLocalPath
     )
 
-    SnowflakeUtils.waitStreamsRefresh()
+    SnowflakeUtils.waitStreamsRefresh(6000)
 
     val fileToReadFromStream: Array[String] = session
       .table(paymentStageStreamName)
@@ -370,14 +364,43 @@ class SamplePipeline {
           ratingsGt50Df("ratingInPercentage")
         )
 
-      orderPayments.join(restaurantRatings,usingColumn = "restaurantCode")
+      orderPayments
+        .join(restaurantRatings, usingColumn = "restaurantCode")
         .select(
           orderDf("*"),
           amexPaymentDf("paymentType"),
           ratingsGt50Df("ratingInPercentage")
         )
-        .show()
+        .write
+        .mode(SaveMode.Append)
+        .saveAsTable(amexRatingGt50TableName)
     })
+  }
+
+  def topRestaurantsLast30Days(): Unit = {
+    val restaurantDF = session.table(restaurantTableName)
+    val ratingDf = session.table(ratingsTableName)
+    val bestRating = ratingDf
+      .where(
+        col("dateOfRate")
+          .between(
+            to_date(dateadd("day", lit(-30), sysdate())),
+            to_date(sysdate()),
+          )
+      )
+      .groupBy("restaurantCode")
+      .agg(avg(col("ratingInPercentage")).as("ratingInPercentage"))
+      .select(
+        col("restaurantCode"),
+        round(col("ratingInPercentage"), lit(2)).as("ratingInPercentage")
+      )
+
+    bestRating
+      .join(restaurantDF, usingColumn = "restaurantCode")
+      .select(col("restaurantName"), col("ratingInPercentage"))
+      .sort(col("ratingInPercentage").desc)
+      .createOrReplaceView(bestRatingRestaurant30days)
+
   }
 
 }
@@ -391,6 +414,7 @@ object SamplePipeline extends App {
   instance.ingestRatingsFromRawToFlat(2000)
   instance.ingestOrdersFromRawToFlat(2000)
 
-//  instance.identifyOrderWithPaymentMoreThanPrice()
-    instance.paidWithAmexRatingGt50()
+  instance.identifyOrderWithPaymentMoreThanPrice()
+  instance.paidWithAmexRatingGt50()
+  instance.topRestaurantsLast30Days()
 }

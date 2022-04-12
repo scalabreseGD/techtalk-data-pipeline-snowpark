@@ -69,7 +69,7 @@ class SamplePipeline {
     localFile
   }
 
-  def ingestAndOverwriteRestaurantWithStage(): Unit = {
+  def ingestAndOverwriteRestaurantWithStage(numRecords: Int): Unit = {
     val restaurantStageName =
       pipelineConfigs.demo.stages.get("restaurant").orNull
     val restaurantStageLocalPath =
@@ -81,7 +81,7 @@ class SamplePipeline {
     val localFile = stageRestCallToLocal(
       restaurantStageName,
       restaurantUrl,
-      Map("numRecords" -> 10),
+      Map("numRecords" -> numRecords),
       restaurantStageLocalPath
     )
 
@@ -145,7 +145,7 @@ class SamplePipeline {
     )
   }
 
-  def ingestRatingsFromRawToFlat(): Unit = {
+  def ingestRatingsFromRawToFlat(numRecords: Int): Unit = {
     val ratingUrl =
       s"${servlets.generator.baseUrl}:${servlets.generator.port}${servlets.generator.basePath}${servlets.generator.endpoints
         .getOrElse("generate-ratings", throw new Error("Endpoint missing"))}/{{numRecords}}"
@@ -157,7 +157,7 @@ class SamplePipeline {
       pipelineConfigs.demo.streams.get("rating_raw").orNull
 
     val ratings: String = HttpClientUtils
-      .performGetJson(ratingUrl, Map("numRecords" -> 10))
+      .performGetJson(ratingUrl, Map("numRecords" -> numRecords))
 
     session
       .createDataFrame(
@@ -349,17 +349,48 @@ class SamplePipeline {
     })
   }
 
+  def paidWithAmexRatingGt50(): Unit = {
+    SnowflakeUtils.executeInTransaction(snowparkSession => {
+      val orderDf = snowparkSession.table(ordersTableName)
+      val amexPaymentDf = snowparkSession
+        .table(paymentsTableName)
+        .where(col("paymentType") === lit("AMEX"))
+      val ratingsGt50Df = snowparkSession
+        .table(ratingsTableName)
+        .where(col("ratingInPercentage") > lit(50))
+      val restaurantDf = snowparkSession.table(restaurantTableName)
+      val orderPayments = orderDf
+        .join(amexPaymentDf, usingColumn = "orderCode")
+        .select(orderDf("*"), amexPaymentDf("paymentType"))
+
+      val restaurantRatings = restaurantDf
+        .join(ratingsGt50Df, usingColumn = "restaurantCode")
+        .select(
+          restaurantDf("restaurantCode"),
+          ratingsGt50Df("ratingInPercentage")
+        )
+
+      orderPayments.join(restaurantRatings,usingColumn = "restaurantCode")
+        .select(
+          orderDf("*"),
+          amexPaymentDf("paymentType"),
+          ratingsGt50Df("ratingInPercentage")
+        )
+        .show()
+    })
+  }
+
 }
 
 object SamplePipeline extends App {
 
   val instance = new SamplePipeline()
 
-//  instance.ingestAndOverwriteRestaurantWithStage()
-  instance.ingestPaymentsStreamFromStage(1000)
-//  instance.ingestRatingsFromRawToFlat()
-  instance.ingestOrdersFromRawToFlat(250)
+  instance.ingestAndOverwriteRestaurantWithStage(1000)
+  instance.ingestPaymentsStreamFromStage(2500)
+  instance.ingestRatingsFromRawToFlat(2000)
+  instance.ingestOrdersFromRawToFlat(2000)
 
-  instance.identifyOrderWithPaymentMoreThanPrice()
-
+//  instance.identifyOrderWithPaymentMoreThanPrice()
+    instance.paidWithAmexRatingGt50()
 }

@@ -1,11 +1,23 @@
 package com.griddynamics.common.rest_beans
-import com.snowflake.snowpark.types.{ArrayType, DataType, DoubleType, IntegerType, StringType, StructField, StructType}
+import com.snowflake.snowpark.types.{
+  ArrayType,
+  DataType,
+  DoubleType,
+  IntegerType,
+  StringType,
+  StructField,
+  StructType
+}
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 case class Order(
     orderCode: String,
     customerEmail: String,
     totPrice: Double,
-    restaurantCode: String
+    restaurantCode: String,
+    dateOfOrder: String
 )
 object Order extends Generator[Order] with SnowparkStruct {
   private val codeIntervalChars: List[String] = confs
@@ -57,31 +69,41 @@ object Order extends Generator[Order] with SnowparkStruct {
     generateOrderCode(),
     generateCustomerEmail(),
     generateRandomDoublePrecisionTwo(),
-    Restaurant.generateRestaurantCode()
+    Restaurant.generateRestaurantCode(),
+    LocalDateTime
+      .now()
+      .format(DateTimeFormatter.ISO_DATE)
   )
 
   override def configsKey: String = "orders"
 
-  override def schema: ArrayType = ArrayType(StructType(
-    StructField(
-      name = "orderCode",
-      dataType = StringType,
-      nullable = true
-    ),
-    StructField(
-      name = "customerEmail",
-      dataType = StringType,
-      nullable = true
-    ),
-    StructField(
-      name = "totPrice",
-      dataType = DoubleType,
-      nullable = true
-    ),
-    StructField(
-      name = "restaurantCode",
-      dataType = StringType,
-      nullable = true
+  override def schema: ArrayType = ArrayType(
+    StructType(
+      StructField(
+        name = "orderCode",
+        dataType = StringType,
+        nullable = true
+      ),
+      StructField(
+        name = "customerEmail",
+        dataType = StringType,
+        nullable = true
+      ),
+      StructField(
+        name = "totPrice",
+        dataType = DoubleType,
+        nullable = true
+      ),
+      StructField(
+        name = "restaurantCode",
+        dataType = StringType,
+        nullable = true
+      ),
+      StructField(
+        name = "dateOfOrder",
+        dataType = StringType,
+        nullable = true
+      )
     )
-  ))
+  )
 }

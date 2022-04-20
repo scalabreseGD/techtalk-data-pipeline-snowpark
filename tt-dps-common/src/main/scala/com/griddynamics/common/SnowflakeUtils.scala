@@ -1,7 +1,8 @@
 package com.griddynamics.common
 
-import com.snowflake.snowpark.Session
+import com.snowflake.snowpark.{DataFrame, PutResult, Session}
 
+import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 
 object SnowflakeUtils {
@@ -115,4 +116,14 @@ object SnowflakeUtils {
 
   def waitStreamsRefresh(timeout: Long = 3000): Unit =
     Thread.sleep(timeout) // Wait until the stream got refreshed
+
+  @tailrec
+  def waitStreamAsData(dfGenerator: Session => Option[DataFrame], timeout: Long = 3000)(implicit session: Session):DataFrame = {
+    dfGenerator(session) match {
+      case Some(value) => value
+      case None =>
+        waitStreamsRefresh(timeout)
+        waitStreamAsData(dfGenerator)
+    }
+  }
 }

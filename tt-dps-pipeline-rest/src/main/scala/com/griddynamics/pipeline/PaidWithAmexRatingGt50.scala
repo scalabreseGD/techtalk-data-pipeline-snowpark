@@ -1,10 +1,13 @@
 package com.griddynamics.pipeline
 
-import com.griddynamics.common.SnowflakeUtils
+import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.griddynamics.common.configs.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.pipeline.Operation
 import com.snowflake.snowpark.functions.{col, lit}
 import com.snowflake.snowpark.{SaveMode, Session}
+import com.snowflake.snowpark.Implicits.WaitForASyncJobs
+
+import scala.util.{Failure, Success, Try}
 
 object PaidWithAmexRatingGt50 {
   private val amexRatingGt50TableName =
@@ -29,7 +32,7 @@ object PaidWithAmexRatingGt50 {
       val restaurantDf = snowparkSession.table(restaurantTableName)
       val orderPayments = orderDf
         .join(amexPaymentDf, usingColumn = "orderCode")
-        .select(orderDf("*"), amexPaymentDf("paymentType"))
+        .select("paymentType", orderDf.schema.fields.map(f => f.name): _*)
 
       val restaurantRatings = restaurantDf
         .join(ratingsGt50Df, usingColumn = "restaurantCode")
@@ -38,19 +41,49 @@ object PaidWithAmexRatingGt50 {
           ratingsGt50Df("ratingInPercentage")
         )
 
-      orderPayments
+      val dqAmexSource = orderPayments
         .join(restaurantRatings, usingColumn = "restaurantCode")
         .select(
-          orderDf("*"),
-          amexPaymentDf("paymentType"),
-          ratingsGt50Df("ratingInPercentage")
+          orderDf.schema.fields.map(f => col(f.name)) ++ Seq(
+            amexPaymentDf(
+              "paymentType"
+            ),
+            ratingsGt50Df("ratingInPercentage")
+          )
         )
-        .write
-        .mode(SaveMode.Append)
-        .saveAsTable(amexRatingGt50TableName)
+
+      Try {
+        val df = session.table(amexRatingGt50TableName)
+        df.count()
+        df
+      } match {
+        case Failure(_) =>
+          dqAmexSource.write
+            .mode(SaveMode.Overwrite)
+            .async
+            .saveAsTable(amexRatingGt50TableName)
+            .addToShutDownHook()
+        case Success(destination) =>
+          destination
+            .merge(
+              dqAmexSource,
+              dqAmexSource("orderCode") === destination("orderCode")
+            )
+            .whenNotMatched
+            .insert(
+              destination.schema.fields
+                .map(field =>
+                  (destination(field.name), dqAmexSource(field.name))
+                )
+                .toMap
+            )
+            .async
+            .collect()
+            .addToShutDownHook()
+      }
     })(session)
   }
-  def apply()(implicit session: Session): Operation = Operation(
+  def apply()(implicit sessionManager: SessionManager): Operation = Operation(
     name = "paidWithAmexRatingGt50",
     operation = paidWithAmexRatingGt50
   )

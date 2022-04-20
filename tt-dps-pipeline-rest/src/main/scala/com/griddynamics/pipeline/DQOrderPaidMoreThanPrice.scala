@@ -1,13 +1,13 @@
 package com.griddynamics.pipeline
 
-import com.griddynamics.common.SnowflakeUtils
+import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.configs.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.pipeline.Operation
 import com.snowflake.snowpark.functions.{col, sum}
 import com.snowflake.snowpark.{SaveMode, Session}
 
-object IdentifyOrderWithPaymentMoreThanPrice {
+object DQOrderPaidMoreThanPrice {
   private val ordersTableName =
     pipelineConfigs.demo.tables.get("order").orNull
   private val paymentsTableName =
@@ -52,7 +52,7 @@ object IdentifyOrderWithPaymentMoreThanPrice {
         .saveAsTable(dqPaymentMoreThanOrderTableName)
     })(session)
   }
-  def apply()(implicit session: Session): Operation = Operation(
+  def apply()(implicit sessionManager: SessionManager): Operation = Operation(
     name = "identifyOrderWithPaymentMoreThanPrice",
     operation = identifyOrderWithPaymentMoreThanPrice
   )

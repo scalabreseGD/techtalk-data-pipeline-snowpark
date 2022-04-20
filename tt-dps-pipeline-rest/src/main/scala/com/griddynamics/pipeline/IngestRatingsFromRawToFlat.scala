@@ -1,6 +1,6 @@
 package com.griddynamics.pipeline
 
-import com.griddynamics.common.SnowflakeUtils
+import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
 import com.griddynamics.common.pipeline.Operation
@@ -111,7 +111,7 @@ object IngestRatingsFromRawToFlat {
       }
     })(session)
   }
-  def apply(numRecords:Int)(implicit session: Session): Operation = Operation(
+  def apply(numRecords:Int)(implicit sessionManager: SessionManager): Operation = Operation(
     name = "ingestRatingsFromRawToFlat",
     operation = ingestRatingsFromRawToFlat,
     parameters = Seq(("numRecords", numRecords))

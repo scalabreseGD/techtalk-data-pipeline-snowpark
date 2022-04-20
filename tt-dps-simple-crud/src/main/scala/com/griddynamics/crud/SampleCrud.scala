@@ -1,11 +1,11 @@
 package com.griddynamics.crud
 
-import com.griddynamics.common.Implicits.session
+import com.griddynamics.common.Implicits.sessionManager
 import com.snowflake.snowpark.functions._
-import com.snowflake.snowpark.{MergeResult, SaveMode, TableFunction}
+import com.snowflake.snowpark.{MergeResult, SaveMode, Session, TableFunction}
 
 object SampleCrud {
-
+  implicit val session: Session = sessionManager.get
   def insertSampleIndustryCode(numRecord: Int): Unit = {
     session
       .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))

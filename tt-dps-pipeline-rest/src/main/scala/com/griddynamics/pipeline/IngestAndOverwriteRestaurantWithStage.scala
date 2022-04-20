@@ -1,6 +1,6 @@
 package com.griddynamics.pipeline
 
-import com.griddynamics.common.SnowflakeUtils
+import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
 import com.griddynamics.common.pipeline.Operation
 import com.griddynamics.common.rest_beans.Restaurant
@@ -44,7 +44,7 @@ object IngestAndOverwriteRestaurantWithStage {
     })(session)
   }
 
-  def apply(numRecords:Int)(implicit session: Session): Operation = Operation(
+  def apply(numRecords:Int)(implicit sessionManager: SessionManager): Operation = Operation(
     name = "ingestAndOverwriteRestaurantWithStage",
     operation = ingestAndOverwriteRestaurantWithStage,
     parameters = Seq(("numRecords", numRecords))

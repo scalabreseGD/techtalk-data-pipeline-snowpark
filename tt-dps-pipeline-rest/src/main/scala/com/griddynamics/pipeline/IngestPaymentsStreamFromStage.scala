@@ -1,6 +1,6 @@
 package com.griddynamics.pipeline
 
-import com.griddynamics.common.SnowflakeUtils
+import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
 import com.griddynamics.common.pipeline.Operation
@@ -50,15 +50,14 @@ object IngestPaymentsStreamFromStage {
       paymentStageLocalPath
     )
 
-    SnowflakeUtils.waitStreamsRefresh(9000)
-
     val fileToReadFromStream: Array[String] = session
       .table(paymentStageStreamName)
       .select(concat(lit(s"@$paymentStageName/"), col("relative_path")))
+      .cacheResult()
       .collect()
       .map(_.getString(0))
 
-    val jsonFileExplodedDF: Option[DataFrame] = fileToReadFromStream
+    val jsonFileExplodedDF = fileToReadFromStream
       .map(session.read.json)
       .reduceOption((first: DataFrame, second: DataFrame) => first union second)
 
@@ -70,7 +69,7 @@ object IngestPaymentsStreamFromStage {
         .saveAsTable(paymentsTableName)
     )
   }
-  def apply(numRecords:Int)(implicit session: Session): Operation = Operation(
+  def apply(numRecords: Int)(implicit sessionManager: SessionManager): Operation = Operation(
     name = "ingestPaymentsStreamFromStage",
     operation = ingestPaymentsStreamFromStage,
     parameters = Seq(("numRecords", numRecords))

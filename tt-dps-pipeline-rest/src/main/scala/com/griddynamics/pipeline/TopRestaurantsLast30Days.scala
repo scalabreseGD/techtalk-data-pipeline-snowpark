@@ -1,17 +1,10 @@
 package com.griddynamics.pipeline
 
+import com.griddynamics.common.SessionManager
 import com.griddynamics.common.configs.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.pipeline.Operation
 import com.snowflake.snowpark.Session
-import com.snowflake.snowpark.functions.{
-  avg,
-  col,
-  dateadd,
-  lit,
-  round,
-  sysdate,
-  to_date
-}
+import com.snowflake.snowpark.functions.{avg, col, dateadd, lit, round, sysdate, to_date}
 
 object TopRestaurantsLast30Days {
   private val bestRatingRestaurant30days =
@@ -45,7 +38,7 @@ object TopRestaurantsLast30Days {
       .createOrReplaceView(bestRatingRestaurant30days)
 
   }
-  def apply()(implicit session: Session): Operation = Operation(
+  def apply()(implicit sessionManager: SessionManager): Operation = Operation(
     name = "topRestaurantsLast30Days",
     operation = topRestaurantsLast30Days
   )

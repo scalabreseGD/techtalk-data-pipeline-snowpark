@@ -12,20 +12,20 @@ class SessionManager(val connProperties:Map[String,String]) extends Logging {
     val session = Session.builder.configs(connProperties).create
     session.setQueryTag("Snowpark-process")
     sessionReference = new AtomicReference[Session](session)
-    Runtime.getRuntime.addShutdownHook(new Thread(() => {
-      logger.info(s"Closing Session ${session.getSessionInfo()}")
-      session.close()
-    }))
+//    Runtime.getRuntime.addShutdownHook(new Thread(() => {
+//      logger.info(s"Closing Session ${session.getSessionInfo()}")
+//      session.close()
+//    }))
     sessionReference
   }
   def get: Session = {
     try {
       val session = sessionReference.get()
-      session.jdbcConnection.isClosed
+      assert(!session.jdbcConnection.isClosed)
       logger.info(s"Valid Session Present - providing the existing one ${session.getSessionInfo()}")
       session
     } catch {
-      case _:Exception =>
+      case _:Throwable =>
         logger.info("Valid Session Not Present - issuing a new one")
         createInternal.get()
     }

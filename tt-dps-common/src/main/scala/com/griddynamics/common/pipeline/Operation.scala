@@ -1,19 +1,18 @@
 package com.griddynamics.common.pipeline
 
-import com.griddynamics.common.SnowflakeUtils.{
-  TransactionalOperation,
-  TransactionalOperationWithParams
-}
-import com.snowflake.snowpark.Session
+import com.griddynamics.common.SessionManager
+import com.griddynamics.common.SnowflakeUtils.{TransactionalOperation, TransactionalOperationWithParams}
 
 class Operation(
     override val name: String,
     operation: TransactionalOperationWithParams,
     parameters: Seq[(String, Any)]
-)(implicit session: Session)
+)(implicit sessionManager: SessionManager)
     extends Node {
   override def children: Seq[Node] = Seq.empty
-  override def execute: () => Any = () => operation(session, parameters)
+  override def execute: () => Any = () => {
+    operation(sessionManager.get, parameters)
+  }
 }
 
 object Operation {
@@ -21,14 +20,13 @@ object Operation {
       name: String,
       operation: TransactionalOperationWithParams,
       parameters: Seq[(String, Any)]
-  )(implicit session: Session): Operation =
-    new Operation(name, operation, parameters)(session)
+  )(implicit sessionManager: SessionManager): Operation =
+    new Operation(name, operation, parameters)(sessionManager)
 
-  def apply(name: String, operation: TransactionalOperation)(implicit
-      session: Session
+  def apply(name: String, operation: TransactionalOperation)(implicit sessionManager: SessionManager
   ): Operation = new Operation(
     name = name,
     operation = (s, _) => operation(s),
     Seq.empty
-  )(session)
+  )(sessionManager)
 }

@@ -1,7 +1,12 @@
 package com.snowflake.snowpark
 
 import com.snowflake.snowpark.functions.{col, get_ignore_case, lit}
-import com.snowflake.snowpark.types.{ArrayType, AtomicType, StructField, StructType}
+import com.snowflake.snowpark.types.{
+  ArrayType,
+  AtomicType,
+  StructField,
+  StructType
+}
 
 object Implicits {
   implicit class WithCastDataFrame(df: DataFrame) {
@@ -30,6 +35,15 @@ object Implicits {
           df.flatten(col(columnName))
             .select(col("value") cast anyType as "value")
       }
+    }
+  }
+
+  implicit class WaitForASyncJobs[T <: TypedAsyncJob[_]](asyncJob: T) {
+    def addToShutDownHook(): T = {
+      Runtime.getRuntime.addShutdownHook(new Thread(() => {
+        asyncJob.getResult()
+      }))
+      asyncJob
     }
   }
 }

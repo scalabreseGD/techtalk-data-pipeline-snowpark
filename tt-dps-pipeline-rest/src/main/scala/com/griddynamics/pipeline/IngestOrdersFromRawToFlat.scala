@@ -97,9 +97,9 @@ object IngestOrdersFromRawToFlat {
       }
     })(session)
   }
-  def apply()(implicit session: Session): Operation = Operation(
+  def apply(numRecords:Int)(implicit session: Session): Operation = Operation(
     name = "ingestOrdersFromRawToFlat",
     operation = ingestOrdersFromRawToFlat,
-    parameters = Seq(("numRecords", 1000))
+    parameters = Seq(("numRecords", numRecords))
   )
 }

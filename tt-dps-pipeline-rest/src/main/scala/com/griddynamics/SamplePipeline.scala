@@ -1,25 +1,23 @@
 package com.griddynamics
 
-import com.griddynamics.common.pipeline.{DAG, Operation}
+import com.griddynamics.common.pipeline.{DAG, Pipeline}
 import com.griddynamics.pipeline._
+
+import scala.concurrent.duration._
+import scala.language.postfixOps
 object SamplePipeline extends App {
   import com.griddynamics.common.Implicits.session
   val ingestAndOverwriteRestaurantWithStage =
-    IngestAndOverwriteRestaurantWithStage()
-  val ingestPaymentsStreamFromStage = IngestPaymentsStreamFromStage()
-  val ingestRatingsFromRawToFlat = IngestRatingsFromRawToFlat()
-  val ingestOrdersFromRawToFlat = IngestOrdersFromRawToFlat()
+    IngestAndOverwriteRestaurantWithStage(100)
+  val ingestPaymentsStreamFromStage = IngestPaymentsStreamFromStage(1000)
+  val ingestRatingsFromRawToFlat = IngestRatingsFromRawToFlat(1000)
+  val ingestOrdersFromRawToFlat = IngestOrdersFromRawToFlat(1000)
   val identifyOrderWithPaymentMoreThanPrice =
     IdentifyOrderWithPaymentMoreThanPrice()
-
   val paidWithAmexRatingGt50 = PaidWithAmexRatingGt50()
+  val topRestaurantsLast30Days = TopRestaurantsLast30Days()
 
-  val topRestaurantsLast30Days = Operation(
-    name = "topRestaurantsLast30Days",
-    operation = instance.topRestaurantsLast30Days
-  )
-
-  val dag = DAG("sample").withNodeStructure(root => {
+  val dag: DAG = DAG("sample").withNodeStructure(root => {
     val last3 = Array(
       identifyOrderWithPaymentMoreThanPrice,
       paidWithAmexRatingGt50,
@@ -32,5 +30,7 @@ object SamplePipeline extends App {
       ingestOrdersFromRawToFlat >> last3
     )
   })
-  dag.evaluate()
+
+  val pipeline = Pipeline(dag = dag).asContinuous(5 seconds)
+  pipeline.evaluate()
 }

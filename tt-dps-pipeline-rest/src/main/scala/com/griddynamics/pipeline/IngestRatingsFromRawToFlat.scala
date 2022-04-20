@@ -6,6 +6,7 @@ import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
 import com.griddynamics.common.pipeline.Operation
 import com.griddynamics.common.rest_beans.Rating
 import com.griddynamics.pipeline.utils.HttpClientUtils
+import com.snowflake.snowpark.Implicits.WithCastDataFrame
 import com.snowflake.snowpark.functions.{col, parse_json}
 import com.snowflake.snowpark.types.{StringType, StructField, StructType}
 import com.snowflake.snowpark.{DataFrame, Row, SaveMode, Session}
@@ -110,9 +111,9 @@ object IngestRatingsFromRawToFlat {
       }
     })(session)
   }
-  def apply()(implicit session: Session): Operation = Operation(
+  def apply(numRecords:Int)(implicit session: Session): Operation = Operation(
     name = "ingestRatingsFromRawToFlat",
     operation = ingestRatingsFromRawToFlat,
-    parameters = Seq(("numRecords", 1000))
+    parameters = Seq(("numRecords", numRecords))
   )
 }

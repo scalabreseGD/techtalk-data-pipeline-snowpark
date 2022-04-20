@@ -44,9 +44,9 @@ object IngestAndOverwriteRestaurantWithStage {
     })(session)
   }
 
-  def apply()(implicit session: Session): Operation = Operation(
+  def apply(numRecords:Int)(implicit session: Session): Operation = Operation(
     name = "ingestAndOverwriteRestaurantWithStage",
     operation = ingestAndOverwriteRestaurantWithStage,
-    parameters = Seq(("numRecords", 1000))
+    parameters = Seq(("numRecords", numRecords))
   )
 }

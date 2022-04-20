@@ -11,10 +11,6 @@
 
     <artifactId>tt-dps-rest-provider</artifactId>
 
-    <properties>
-        <maven.compiler.source>13</maven.compiler.source>
-        <maven.compiler.target>13</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -40,7 +36,7 @@
         <dependency>
             <groupId>com.griddynamics</groupId>
             <artifactId>tt-dps-common</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
 

@@ -17,11 +17,11 @@
     </modules>
 
     <properties>
-        <maven.compiler.source>13</maven.compiler.source>
-        <maven.compiler.target>13</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <scala.version>2.12.11</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
-        <snowpark.version>1.2.0</snowpark.version>
+        <snowpark.version>1.3.0</snowpark.version>
         <log4j.version>2.17.2</log4j.version>
         <scalatra.version>2.8.2</scalatra.version>
         <main.class/>
@@ -125,30 +125,6 @@
                         <goals>
                             <goal>testCompile</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>jar-with-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <archive>
-                                <manifest>
-                                    <mainClass>${main.class}</mainClass>
-                                </manifest>
-                            </archive>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                            <finalName>${fatjar.final.name}</finalName>
-                            <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

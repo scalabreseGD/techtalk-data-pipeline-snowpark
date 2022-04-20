@@ -1,10 +1,10 @@
 package com.griddynamics.pipeline
 
-import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
 import com.griddynamics.common.pipeline.Operation
 import com.griddynamics.common.rest_beans.Payment
+import com.griddynamics.common.{SessionManager, SnowflakeUtils}
 import com.griddynamics.pipeline.utils.stageRestCallFromLocal
 import com.snowflake.snowpark.Implicits.WithCastDataFrame
 import com.snowflake.snowpark.functions.{col, concat, lit, parse_json}
@@ -50,26 +50,32 @@ object IngestPaymentsStreamFromStage {
       paymentStageLocalPath
     )
 
-    val fileToReadFromStream: Array[String] = session
-      .table(paymentStageStreamName)
-      .select(concat(lit(s"@$paymentStageName/"), col("relative_path")))
-      .cacheResult()
-      .collect()
-      .map(_.getString(0))
+    val jsonFileExplodedDF = SnowflakeUtils.waitStreamAsData((sf) => {
+      val fileToReadFromStream: Array[String] = sf
+        .table(paymentStageStreamName)
+        .select(concat(lit(s"@$paymentStageName/"), col("relative_path")))
+        .cacheResult()
+        .collect()
+        .map(_.getString(0))
 
-    val jsonFileExplodedDF = fileToReadFromStream
-      .map(session.read.json)
-      .reduceOption((first: DataFrame, second: DataFrame) => first union second)
+      fileToReadFromStream
+        .map(sf.read.json)
+        .reduceOption((first: DataFrame, second: DataFrame) =>
+          first union second
+        )
+    })(session)
+    
+    jsonFileExplodedDF
+      .select(parse_json(col("*")).as("full"))
+      .jsonArrayToExplodedFields(Payment.schema, "full")
+      .write
+      .mode(SaveMode.Append)
+      .saveAsTable(paymentsTableName)
 
-    jsonFileExplodedDF.foreach(
-      _.select(parse_json(col("*")).as("full"))
-        .jsonArrayToExplodedFields(Payment.schema, "full")
-        .write
-        .mode(SaveMode.Append)
-        .saveAsTable(paymentsTableName)
-    )
   }
-  def apply(numRecords: Int)(implicit sessionManager: SessionManager): Operation = Operation(
+  def apply(
+      numRecords: Int
+  )(implicit sessionManager: SessionManager): Operation = Operation(
     name = "ingestPaymentsStreamFromStage",
     operation = ingestPaymentsStreamFromStage,
     parameters = Seq(("numRecords", numRecords))

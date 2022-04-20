@@ -8,8 +8,8 @@ object Main {
 
   def main(args: Array[String]): Unit = {
     generateUDTFs()
-    SampleStream.generateRecordsIntoEmployeeCode(5000)
     SampleStream.createIndustryCodeStream()
+    SampleStream.generateRecordsIntoEmployeeCode(5000)
     SampleStream.generateRecordsIntoIndustryCode(2000)
     SnowflakeUtils.executeInTransaction(session => {
       SampleStream.cleanWriteStreamToTableIndustryCodeFirst2(session)

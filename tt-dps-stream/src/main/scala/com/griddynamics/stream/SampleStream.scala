@@ -14,6 +14,11 @@ object SampleStream {
       "INDUSTRY_CODE",
       withReplace = true
     )
+    SnowflakeUtils.createStreamOnObjectType(
+      "INDUSTRY_CODE_STREAM",
+      "INDUSTRY_CODE",
+      withReplace = true
+    )
   }
 
   def generateRecordsIntoIndustryCode(
@@ -39,7 +44,6 @@ object SampleStream {
   def cleanWriteStreamToTableIndustryCodeFirst2(session: Session): Unit = {
     val industryCodeStreamName = "INDUSTRY_CODE_STREAM"
     val industryCodeNameFirst2 = "INDUSTRY_CODE_FIRST2"
-    session.table(industryCodeNameFirst2).delete()
     val industryCodeStreamDf = session.table(industryCodeStreamName)
     industryCodeStreamDf
       .select(
@@ -59,7 +63,7 @@ object SampleStream {
 
   def industryStreamEmployee(session: Session): Unit = {
     val employeeTableName = "EMPLOYEE"
-    val industryCodeStreamName = "EMPLOYEE_STREAM"
+    val industryCodeStreamName = "INDUSTRY_CODE_STREAM"
     val destinationEmployeeIndustry = "EMPLOYEE_INDUSTRY"
 
     val employeeDf = session.table(employeeTableName)

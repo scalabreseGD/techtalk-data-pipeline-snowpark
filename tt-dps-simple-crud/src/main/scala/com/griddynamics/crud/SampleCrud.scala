@@ -9,6 +9,7 @@ object SampleCrud {
   def insertSampleIndustryCode(numRecord: Int): Unit = {
     session
       .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
+      .dropDuplicates("districtCode")
       .write
       .mode(SaveMode.Overwrite)
       .saveAsTable("INDUSTRY_CODE")
@@ -45,8 +46,8 @@ object SampleCrud {
     val result: MergeResult = target
       .merge(
         sourceDf,
-        substring(sourceDf("districtCode"), lit(0), lit(2))
-          === substring(target("districtCode"), lit(0), lit(2))
+        substring(sourceDf("districtCode"), lit(0), lit(4))
+          === substring(target("districtCode"), lit(0), lit(4))
       )
       .whenNotMatched
       .insert(
@@ -55,7 +56,12 @@ object SampleCrud {
           .toMap
       )
       .whenMatched
-      .update(Map("sizeInSquareMeters" -> sourceDf("sizeInSquareMeters")))
+      .update(
+        Map(
+          "sizeInSquareMeters" -> sourceDf("sizeInSquareMeters") * lit(100),
+          "districtCode" -> upper(sourceDf("districtCode"))
+        )
+      )
       .collect()
     print(
       s"Rows Inserted ${result.rowsInserted} - Rows Updated ${result.rowsUpdated}"

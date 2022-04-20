@@ -1,13 +1,12 @@
 package com.griddynamics.crud
 
-import com.griddynamics.common.Implicits.sessionManager
+import com.griddynamics.common.Implicits.session
 import com.snowflake.snowpark.functions._
 import com.snowflake.snowpark.{MergeResult, SaveMode, TableFunction}
 
 object SampleCrud {
 
   def insertSampleIndustryCode(numRecord: Int): Unit = {
-    val session = sessionManager.get
     session
       .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
       .write
@@ -26,7 +25,6 @@ object SampleCrud {
   }
 
   def performUpdate(): Unit = {
-    val session = sessionManager.get
     session
       .table("INDUSTRY_CODE_L_OR_D")
       .update(
@@ -37,7 +35,6 @@ object SampleCrud {
   }
 
   def performMerge(): Unit = {
-    val session = sessionManager.get
     val sourceDf = session.tableFunction(
       TableFunction("GENERATE_INDUSTRIES"),
       lit(10000)

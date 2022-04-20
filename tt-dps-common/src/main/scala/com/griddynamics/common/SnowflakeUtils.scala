@@ -6,6 +6,7 @@ import scala.util.{Failure, Success, Try}
 
 object SnowflakeUtils {
 
+  type TransactionalOperationWithParams = (Session, Seq[(String,Any)]) => Unit
   type TransactionalOperation = Session => Unit
 
   sealed trait StreamSourceMode extends scala.AnyRef {
@@ -48,15 +49,15 @@ object SnowflakeUtils {
       ifNotExists: Boolean = false,
       showInitialRows: Boolean = false,
       sourceObjectType: StreamSourceMode = StreamSourceMode.Table
-  )(implicit sessionManager: SessionManager): Unit = {
-    val session = sessionManager.get
+  )(implicit session: Session): Unit = {
 
     val sql = s"CREATE " +
       s" ${if (withReplace) "OR REPLACE" else ""}" +
       s" STREAM " +
-      s" ${if(ifNotExists) "IF NOT EXISTS" else ""}" +
+      s" ${if (ifNotExists) "IF NOT EXISTS" else ""}" +
       s" $streamName " +
-      s" ON ${sourceObjectType.objectType} $sourceObjectName ${if (showInitialRows) "SHOW_INITIAL_ROWS = TRUE" else ""}"
+      s" ON ${sourceObjectType.objectType} $sourceObjectName ${if (showInitialRows) "SHOW_INITIAL_ROWS = TRUE"
+      else ""}"
 
     session
       .sql(sql)
@@ -64,9 +65,8 @@ object SnowflakeUtils {
   }
 
   def executeInTransaction(transactionalOperation: TransactionalOperation)(
-      implicit sessionManager: SessionManager
+      implicit session: Session
   ): Unit = {
-    val session = sessionManager.get
     val exec: Session => Unit = (innerSession: Session) =>
       Try {
         transactionalOperation(innerSession)
@@ -79,11 +79,12 @@ object SnowflakeUtils {
     enriched(session)
   }
 
-  def createStage(stageName: String,
-                  orReplace: Boolean,
-                  ifNotExists: Boolean,
-                  directoryEnabled:Boolean = true)(implicit sessionManager: SessionManager): Unit = {
-    val session = sessionManager.get
+  def createStage(
+      stageName: String,
+      orReplace: Boolean,
+      ifNotExists: Boolean,
+      directoryEnabled: Boolean = true
+  )(implicit session: Session): Unit = {
     val sql = s"CREATE " +
       s" ${if (orReplace) " OR REPLACE " else ""}" +
       s" STAGE " +
@@ -101,10 +102,7 @@ object SnowflakeUtils {
       destinationPath: String,
       orReplace: Boolean,
       ifNotExists: Boolean
-  )(implicit
-      sessionManager: SessionManager
-  ): Unit = {
-    val session = sessionManager.get
+  )(implicit session: Session): Unit = {
     createStage(stageName, orReplace, ifNotExists)
     session.file.put(
       s"file://$sourcePath",
@@ -115,5 +113,6 @@ object SnowflakeUtils {
     session.sql(s"alter stage $stageName refresh").show()
   }
 
-  def waitStreamsRefresh(timeout:Long=3000): Unit = Thread.sleep(timeout) // Wait until the stream got refreshed
+  def waitStreamsRefresh(timeout: Long = 3000): Unit =
+    Thread.sleep(timeout) // Wait until the stream got refreshed
 }

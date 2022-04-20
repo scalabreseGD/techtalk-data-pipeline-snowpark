@@ -1,20 +1,19 @@
 package com.griddynamics
 
-import com.griddynamics.common.Implicits.sessionManager
 import com.griddynamics.common.SnowflakeUtils
 import com.griddynamics.common.SnowflakeUtils.StreamSourceMode
 import com.griddynamics.common.configs.ConfigUtils.{pipelineConfigs, servlets}
+import com.griddynamics.common.pipeline.{DAG, Operation}
 import com.griddynamics.common.rest_beans.{Order, Payment, Rating, Restaurant}
 import com.griddynamics.pipeline.utils.HttpClientUtils
 import com.snowflake.snowpark.Implicits.WithCastDataFrame
 import com.snowflake.snowpark.functions._
 import com.snowflake.snowpark.types.{StringType, StructField, StructType}
-import com.snowflake.snowpark.{DataFrame, Row, SaveMode}
+import com.snowflake.snowpark.{DataFrame, Row, SaveMode, Session}
 
 import scala.util.{Failure, Success, Try}
 
 class SamplePipeline {
-  private val session = sessionManager.get
   private val restaurantTableName =
     pipelineConfigs.demo.tables.get("restaurant").orNull
   private val paymentsTableName =
@@ -36,7 +35,8 @@ class SamplePipeline {
     * @param localPath local path where to store the rest call result
     * @return last file staged
     */
-  private def stageRestCallToLocal(
+  private def stageRestCallFromLocal(
+      session: Session,
       stageName: String,
       restUrl: String,
       restParams: Map[String, Any],
@@ -46,7 +46,7 @@ class SamplePipeline {
       stageName,
       orReplace = false,
       ifNotExists = true
-    )
+    )(session)
     val localFile = s"$localPath/${System.currentTimeMillis()}"
     val path = HttpClientUtils.performGetAndWrite(
       restUrl,
@@ -59,11 +59,17 @@ class SamplePipeline {
       localPath,
       orReplace = false,
       ifNotExists = true
-    )
+    )(session)
     localFile
   }
 
-  def ingestAndOverwriteRestaurantWithStage(numRecords: Int): Unit = {
+  def ingestAndOverwriteRestaurantWithStage(
+      session: Session,
+      params: Seq[(String, Any)]
+  ): Unit = {
+    val numRecords = params match {
+      case ("numRecords", numRecords) :: _ => numRecords
+    }
     val restaurantStageName =
       pipelineConfigs.demo.stages.get("restaurant").orNull
     val restaurantStageLocalPath =
@@ -72,7 +78,8 @@ class SamplePipeline {
       s"${servlets.generator.baseUrl}:${servlets.generator.port}${servlets.generator.basePath}${servlets.generator.endpoints
         .getOrElse("generate-restaurants", throw new Error("Endpoint missing"))}/{{numRecords}}"
 
-    val localFile = stageRestCallToLocal(
+    val localFile = stageRestCallFromLocal(
+      session,
       restaurantStageName,
       restaurantUrl,
       Map("numRecords" -> numRecords),
@@ -85,10 +92,16 @@ class SamplePipeline {
         .select(parse_json(col("*")).as("exploded"))
         .jsonArrayToExplodedFields(Restaurant.schema, "exploded")
       extracted.write.mode(SaveMode.Overwrite).saveAsTable(restaurantTableName)
-    })
+    })(session)
   }
 
-  def ingestPaymentsStreamFromStage(numRecords: Int): Unit = {
+  def ingestPaymentsStreamFromStage(
+      session: Session,
+      params: Seq[(String, Any)]
+  ): Unit = {
+    val numRecords = params match {
+      case ("numRecords", numRecords) :: _ => numRecords
+    }
     val paymentStageName = pipelineConfigs.demo.stages.get("payment").orNull
     val paymentStageStreamName =
       pipelineConfigs.demo.streams.get("payment_stage").orNull
@@ -102,23 +115,24 @@ class SamplePipeline {
       paymentStageName,
       orReplace = false,
       ifNotExists = true
-    )
+    )(session)
 
     SnowflakeUtils.createStreamOnObjectType(
       paymentStageStreamName,
       paymentStageName,
       ifNotExists = true,
       sourceObjectType = StreamSourceMode.Stage
-    )
+    )(session)
 
-    stageRestCallToLocal(
+    stageRestCallFromLocal(
+      session,
       paymentStageName,
       paymentUrl,
       Map("numRecords" -> numRecords),
       paymentStageLocalPath
     )
 
-    SnowflakeUtils.waitStreamsRefresh(6000)
+    SnowflakeUtils.waitStreamsRefresh(9000)
 
     val fileToReadFromStream: Array[String] = session
       .table(paymentStageStreamName)
@@ -139,7 +153,13 @@ class SamplePipeline {
     )
   }
 
-  def ingestRatingsFromRawToFlat(numRecords: Int): Unit = {
+  def ingestRatingsFromRawToFlat(
+      session: Session,
+      params: Seq[(String, Any)]
+  ): Unit = {
+    val numRecords = params match {
+      case ("numRecords", numRecords) :: _ => numRecords
+    }
     val ratingUrl =
       s"${servlets.generator.baseUrl}:${servlets.generator.port}${servlets.generator.basePath}${servlets.generator.endpoints
         .getOrElse("generate-ratings", throw new Error("Endpoint missing"))}/{{numRecords}}"
@@ -175,7 +195,7 @@ class SamplePipeline {
       ifNotExists = true,
       showInitialRows = true,
       sourceObjectType = StreamSourceMode.Table
-    )
+    )(session)
     SnowflakeUtils.waitStreamsRefresh()
 
     SnowflakeUtils.executeInTransaction(snowflakeSession => {
@@ -226,10 +246,16 @@ class SamplePipeline {
             .mode(SaveMode.Overwrite)
             .saveAsTable(ratingsTableName)
       }
-    })
+    })(session)
   }
 
-  def ingestOrdersFromRawToFlat(numRecords: Int): Unit = {
+  def ingestOrdersFromRawToFlat(
+      session: Session,
+      params: Seq[(String, Any)]
+  ): Unit = {
+    val numRecords = params match {
+      case ("numRecords", numRecords) :: _ => numRecords
+    }
     val orderUrl =
       s"${servlets.generator.baseUrl}:${servlets.generator.port}${servlets.generator.basePath}${servlets.generator.endpoints
         .getOrElse("generate-orders", throw new Error("Endpoint missing"))}/{{numRecords}}"
@@ -265,7 +291,7 @@ class SamplePipeline {
       ifNotExists = true,
       showInitialRows = true,
       sourceObjectType = StreamSourceMode.Table
-    )
+    )(session)
     SnowflakeUtils.waitStreamsRefresh()
     SnowflakeUtils.executeInTransaction(snowflakeSession => {
       val flattenOrderJson: DataFrame = snowflakeSession
@@ -302,9 +328,9 @@ class SamplePipeline {
             .mode(SaveMode.Overwrite)
             .saveAsTable(ordersTableName)
       }
-    })
+    })(session)
   }
-  def identifyOrderWithPaymentMoreThanPrice(): Unit = {
+  def identifyOrderWithPaymentMoreThanPrice(session: Session): Unit = {
     val paymentStreamName = pipelineConfigs.demo.streams.get("payment").orNull
     val orderStreamName = pipelineConfigs.demo.streams.get("order").orNull
     SnowflakeUtils.createStreamOnObjectType(
@@ -313,7 +339,7 @@ class SamplePipeline {
       sourceObjectType = StreamSourceMode.Table,
       ifNotExists = true,
       showInitialRows = true
-    )
+    )(session)
 
     SnowflakeUtils.createStreamOnObjectType(
       streamName = orderStreamName,
@@ -321,7 +347,7 @@ class SamplePipeline {
       sourceObjectType = StreamSourceMode.Table,
       ifNotExists = true,
       showInitialRows = true
-    )
+    )(session)
 
     SnowflakeUtils.waitStreamsRefresh()
 
@@ -340,10 +366,10 @@ class SamplePipeline {
         .write
         .mode(SaveMode.Append)
         .saveAsTable(dqPaymentMoreThanOrderTableName)
-    })
+    })(session)
   }
 
-  def paidWithAmexRatingGt50(): Unit = {
+  def paidWithAmexRatingGt50(session: Session): Unit = {
     SnowflakeUtils.executeInTransaction(snowparkSession => {
       val orderDf = snowparkSession.table(ordersTableName)
       val amexPaymentDf = snowparkSession
@@ -374,10 +400,10 @@ class SamplePipeline {
         .write
         .mode(SaveMode.Append)
         .saveAsTable(amexRatingGt50TableName)
-    })
+    })(session)
   }
 
-  def topRestaurantsLast30Days(): Unit = {
+  def topRestaurantsLast30Days(session: Session): Unit = {
     val restaurantDF = session.table(restaurantTableName)
     val ratingDf = session.table(ratingsTableName)
     val bestRating = ratingDf
@@ -385,7 +411,7 @@ class SamplePipeline {
         col("dateOfRate")
           .between(
             to_date(dateadd("day", lit(-30), sysdate())),
-            to_date(sysdate()),
+            to_date(sysdate())
           )
       )
       .groupBy("restaurantCode")
@@ -406,15 +432,53 @@ class SamplePipeline {
 }
 
 object SamplePipeline extends App {
-
+  import com.griddynamics.common.Implicits.session
   val instance = new SamplePipeline()
 
-  instance.ingestAndOverwriteRestaurantWithStage(1000)
-  instance.ingestPaymentsStreamFromStage(2500)
-  instance.ingestRatingsFromRawToFlat(2000)
-  instance.ingestOrdersFromRawToFlat(2000)
+  val ingestAndOverwriteRestaurantWithStage = Operation(
+    name = "ingestAndOverwriteRestaurantWithStage",
+    operation = instance.ingestAndOverwriteRestaurantWithStage,
+    parameters = Seq(("numRecords", 1000))
+  )
 
-  instance.identifyOrderWithPaymentMoreThanPrice()
-  instance.paidWithAmexRatingGt50()
-  instance.topRestaurantsLast30Days()
+  val ingestPaymentsStreamFromStage = Operation(
+    name = "ingestPaymentsStreamFromStage",
+    operation = instance.ingestPaymentsStreamFromStage,
+    parameters = Seq(("numRecords", 1000))
+  )
+
+  val ingestRatingsFromRawToFlat = Operation(
+    name = "ingestRatingsFromRawToFlat",
+    operation = instance.ingestRatingsFromRawToFlat,
+    parameters = Seq(("numRecords", 1000))
+  )
+  val ingestOrdersFromRawToFlat = Operation(
+    name = "ingestOrdersFromRawToFlat",
+    operation = instance.ingestOrdersFromRawToFlat,
+    parameters = Seq(("numRecords", 1000))
+  )
+  val identifyOrderWithPaymentMoreThanPrice = Operation(
+    name = "identifyOrderWithPaymentMoreThanPrice",
+    operation = s => instance.identifyOrderWithPaymentMoreThanPrice(s)
+  )
+
+  val paidWithAmexRatingGt50 = Operation(
+    name = "paidWithAmexRatingGt50",
+    operation = instance.paidWithAmexRatingGt50
+  )
+
+  val topRestaurantsLast30Days = Operation(
+    name = "topRestaurantsLast30Days",
+    operation = instance.topRestaurantsLast30Days
+  )
+
+  val dag = DAG("sample").withNodeStructure(root => {
+    val last3 = Array(
+      identifyOrderWithPaymentMoreThanPrice,
+      paidWithAmexRatingGt50,
+      topRestaurantsLast30Days
+    )
+    root >> Seq(ingestAndOverwriteRestaurantWithStage >> last3, ingestPaymentsStreamFromStage >> last3, ingestRatingsFromRawToFlat >> last3, ingestOrdersFromRawToFlat >> last3)
+  })
+  dag.evaluate()
 }

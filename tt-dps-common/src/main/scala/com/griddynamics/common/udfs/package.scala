@@ -1,7 +1,7 @@
 package com.griddynamics.common
 
 import com.griddynamics.common.Types.{Employee, IndustryCode}
-import com.snowflake.snowpark.Row
+import com.snowflake.snowpark.{Row, Session}
 import com.snowflake.snowpark.types.StructType
 import com.snowflake.snowpark.udtf.UDTF1
 
@@ -64,8 +64,7 @@ package object udfs {
     override def endPartition(): Iterable[Row] = Array.empty[Row]
   }
 
-  def generateUDTFs()(implicit sessionManager: SessionManager): Unit = {
-    val session = sessionManager.get
+  def generateUDTFs()(implicit session: Session): Unit = {
     session.udtf.registerTemporary(
       "GENERATE_INDUSTRIES",
       new GenerateIndustriesUDT()

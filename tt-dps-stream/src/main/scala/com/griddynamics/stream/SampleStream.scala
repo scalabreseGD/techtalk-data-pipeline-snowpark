@@ -1,13 +1,13 @@
 package com.griddynamics.stream
 
-import com.griddynamics.common.{SessionManager, SnowflakeUtils}
+import com.griddynamics.common.SnowflakeUtils
 import com.snowflake.snowpark.functions.{col, lit, substring, upper}
 import com.snowflake.snowpark.{SaveMode, Session, TableFunction}
 
 object SampleStream {
 
   def createIndustryCodeStream()(implicit
-      sessionManager: SessionManager
+      session: Session
   ): Unit = {
     SnowflakeUtils.createStreamOnObjectType(
       "INDUSTRY_CODE_STREAM",
@@ -18,8 +18,7 @@ object SampleStream {
 
   def generateRecordsIntoIndustryCode(
       numRecord: Int
-  )(implicit sessionManager: SessionManager): Unit = {
-    val session = sessionManager.get
+  )(implicit session: Session): Unit = {
     session
       .tableFunction(TableFunction("GENERATE_INDUSTRIES"), lit(numRecord))
       .write
@@ -29,8 +28,7 @@ object SampleStream {
 
   def generateRecordsIntoEmployeeCode(
       numRecord: Int
-  )(implicit sessionManager: SessionManager): Unit = {
-    val session = sessionManager.get
+  )(implicit session: Session): Unit = {
     session
       .tableFunction(TableFunction("GENERATE_EMPLOYEES"), lit(numRecord))
       .write

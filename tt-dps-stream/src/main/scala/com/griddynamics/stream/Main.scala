@@ -1,6 +1,6 @@
 package com.griddynamics.stream
 
-import com.griddynamics.common.Implicits.sessionManager
+import com.griddynamics.common.Implicits.session
 import com.griddynamics.common.SnowflakeUtils
 import com.griddynamics.common.udfs.generateUDTFs
 

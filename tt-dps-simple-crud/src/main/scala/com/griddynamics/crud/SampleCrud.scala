@@ -68,4 +68,10 @@ object SampleCrud {
     )
   }
 
+  def performDelete(): Unit = {
+    session
+      .table("INDUSTRY_CODE")
+      .delete(col("sizeInSquareMeters") > lit(100))
+  }
+
 }

@@ -11,6 +11,7 @@ object Main {
     SampleCrud.insertSampleIndustryCode(100)
     SampleCrud.performUpdate()
     SampleCrud.performMerge()
+    SampleCrud.performDelete()
   }
 
 }

@@ -9,17 +9,17 @@ pipelines:
   demo:
     tables:
       restaurant: "DIM_RESTAURANT"
-      rating_raw: "TRAN_RATING_RAW"
+      rating_raw: "RATING_RAW"
       rating: "TRAN_RATING"
-      order_raw: "TRAN_ORDER_RAW"
+      order_raw: "ORDER_RAW"
       order: "TRAN_ORDER"
       payment: "TRAN_PAYMENT"
       dq_payment_more_than_order: "DQ_PAYMENT_MT_ORDER"
       amex_rating_gt_50: "ORDER_AMEX_RATING_GT_50"
       best_rating_restaurant_30days: "BEST_RATING_RESTAURANT_30DD"
     streams:
-      rating_raw: "TRAN_RATING_RAW_STREAM"
-      order_raw: "TRAN_ORDER_RAW_STREAM"
+      rating_raw: "RATING_RAW_STREAM"
+      order_raw: "ORDER_RAW_STREAM"
       payment_stage: "PAYMENT_STAGE_STREAM"
       payment: "TRAN_PAYMENT_STREAM"
       order: "TRAN_ORDER_STREAM"

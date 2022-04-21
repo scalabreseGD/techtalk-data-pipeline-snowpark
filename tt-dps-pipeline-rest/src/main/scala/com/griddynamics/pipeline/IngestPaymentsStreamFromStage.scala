@@ -50,21 +50,24 @@ object IngestPaymentsStreamFromStage {
       paymentStageLocalPath
     )
 
-    val jsonFileExplodedDF = SnowflakeUtils.waitStreamAsData((sf) => {
-      val fileToReadFromStream: Array[String] = sf
-        .table(paymentStageStreamName)
-        .select(concat(lit(s"@$paymentStageName/"), col("relative_path")))
-        .cacheResult()
-        .collect()
-        .map(_.getString(0))
+    val jsonFileExplodedDF = SnowflakeUtils.waitStreamAsData(
+      sf => {
+        val fileToReadFromStream: Array[String] = sf
+          .table(paymentStageStreamName)
+          .select(concat(lit(s"@$paymentStageName/"), col("relative_path")))
+          .cacheResult()
+          .collect()
+          .map(_.getString(0))
 
-      fileToReadFromStream
-        .map(sf.read.json)
-        .reduceOption((first: DataFrame, second: DataFrame) =>
-          first union second
-        )
-    })(session)
-    
+        fileToReadFromStream
+          .map(sf.read.json)
+          .reduceOption((first: DataFrame, second: DataFrame) =>
+            first union second
+          )
+      },
+      9000
+    )(session)
+
     jsonFileExplodedDF
       .select(parse_json(col("*")).as("full"))
       .jsonArrayToExplodedFields(Payment.schema, "full")

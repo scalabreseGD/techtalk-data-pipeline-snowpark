@@ -37,13 +37,4 @@ object Implicits {
       }
     }
   }
-
-  implicit class WaitForASyncJobs[T <: TypedAsyncJob[_]](asyncJob: T) {
-    def addToShutDownHook(): T = {
-      Runtime.getRuntime.addShutdownHook(new Thread(() => {
-        asyncJob.getResult()
-      }))
-      asyncJob
-    }
-  }
 }

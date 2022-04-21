@@ -5,7 +5,6 @@ import com.griddynamics.common.configs.ConfigUtils.pipelineConfigs
 import com.griddynamics.common.pipeline.Operation
 import com.snowflake.snowpark.functions.{col, lit}
 import com.snowflake.snowpark.{SaveMode, Session}
-import com.snowflake.snowpark.Implicits.WaitForASyncJobs
 
 import scala.util.{Failure, Success, Try}
 
@@ -60,14 +59,16 @@ object PaidWithAmexRatingGt50 {
         case Failure(_) =>
           dqAmexSource.write
             .mode(SaveMode.Overwrite)
-            .async
             .saveAsTable(amexRatingGt50TableName)
-            .addToShutDownHook()
         case Success(destination) =>
           destination
             .merge(
               dqAmexSource,
-              dqAmexSource("orderCode") === destination("orderCode")
+              (dqAmexSource("orderCode") === destination(
+                "orderCode"
+              )) and (dqAmexSource("dateoforder") === destination(
+                "dateoforder"
+              ))
             )
             .whenNotMatched
             .insert(
@@ -77,9 +78,7 @@ object PaidWithAmexRatingGt50 {
                 )
                 .toMap
             )
-            .async
             .collect()
-            .addToShutDownHook()
       }
     })(session)
   }

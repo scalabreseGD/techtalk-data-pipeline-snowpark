@@ -50,30 +50,25 @@ object IngestPaymentsStreamFromStage {
       paymentStageLocalPath
     )
 
-    val jsonFileExplodedDF = SnowflakeUtils.waitStreamAsData(
-      sf => {
-        val fileToReadFromStream: Array[String] = sf
-          .table(paymentStageStreamName)
-          .select(concat(lit(s"@$paymentStageName/"), col("relative_path")))
-          .cacheResult()
-          .collect()
-          .map(_.getString(0))
+    SnowflakeUtils.waitStreamsRefresh(9000)
+    val fileToReadFromStream: Array[String] = session
+      .table(paymentStageStreamName)
+      .select(concat(lit(s"@$paymentStageName/"), col("relative_path")))
+      .cacheResult()
+      .collect()
+      .map(_.getString(0))
 
-        fileToReadFromStream
-          .map(sf.read.json)
-          .reduceOption((first: DataFrame, second: DataFrame) =>
-            first union second
-          )
-      },
-      9000
-    )(session)
+    val jsonFileExplodedDF = fileToReadFromStream
+      .map(session.read.json)
+      .reduceOption((first: DataFrame, second: DataFrame) => first union second)
 
-    jsonFileExplodedDF
-      .select(parse_json(col("*")).as("full"))
-      .jsonArrayToExplodedFields(Payment.schema, "full")
-      .write
-      .mode(SaveMode.Append)
-      .saveAsTable(paymentsTableName)
+    jsonFileExplodedDF.foreach(
+      _.select(parse_json(col("*")).as("full"))
+        .jsonArrayToExplodedFields(Payment.schema, "full")
+        .write
+        .mode(SaveMode.Append)
+        .saveAsTable(paymentsTableName)
+    )
 
   }
   def apply(

@@ -12,10 +12,10 @@ class SessionManager(val connProperties:Map[String,String]) extends Logging {
     val session = Session.builder.configs(connProperties).create
     session.setQueryTag("Snowpark-process")
     sessionReference = new AtomicReference[Session](session)
-//    Runtime.getRuntime.addShutdownHook(new Thread(() => {
-//      logger.info(s"Closing Session ${session.getSessionInfo()}")
-//      session.close()
-//    }))
+    Runtime.getRuntime.addShutdownHook(new Thread(() => {
+      logger.info(s"Closing Session ${session.getSessionInfo()}")
+      session.close()
+    }))
     sessionReference
   }
   def get: Session = {

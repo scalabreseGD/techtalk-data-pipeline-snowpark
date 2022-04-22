@@ -11,8 +11,8 @@ object Main {
     implicit val session: Session = sessionManager.get
     generateUDTFs()
     SampleStream.createIndustryCodeStream()
-    SampleStream.generateRecordsIntoEmployeeCode(5000)
-    SampleStream.generateRecordsIntoIndustryCode(2000)
+    SampleStream.generateRecordsIntoEmployeeCode(10000)
+    SampleStream.generateRecordsIntoIndustryCode(10000)
     SnowflakeUtils.executeInTransaction(session => {
       SampleStream.cleanWriteStreamToTableIndustryCodeFirst2(session)
       SampleStream.industryStreamEmployee(session)
